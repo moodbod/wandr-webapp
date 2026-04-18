@@ -50,8 +50,7 @@ export const explorePlaces: ExplorePlace[] = [
     top: "63%",
     left: "31%",
     emphasis: true,
-    background:
-      "linear-gradient(135deg, rgba(244, 195, 132, 0.96), rgba(201, 103, 46, 0.9))",
+    background: "rgba(244, 195, 132, 0.96)",
     highlights: ["Dune 45", "Deadvlei", "Guided dawn entry"],
     tags: ["Photography", "Sunrise", "Iconic"],
     featured: true,
@@ -70,8 +69,7 @@ export const explorePlaces: ExplorePlace[] = [
     note: "Wildlife",
     top: "24%",
     left: "47%",
-    background:
-      "linear-gradient(135deg, rgba(227, 223, 182, 0.96), rgba(124, 138, 71, 0.9))",
+    background: "rgba(227, 223, 182, 0.96)",
     highlights: ["Okaukuejo", "Halali", "Waterhole circuit"],
     tags: ["Safari", "Self-drive", "Big sky"],
     featured: true,
@@ -90,8 +88,7 @@ export const explorePlaces: ExplorePlace[] = [
     note: "Fog belt",
     top: "22%",
     left: "18%",
-    background:
-      "linear-gradient(135deg, rgba(116, 162, 178, 0.96), rgba(46, 74, 88, 0.9))",
+    background: "rgba(116, 162, 178, 0.96)",
     highlights: ["Shipwreck viewpoints", "Coastal fog", "Remote access"],
     tags: ["Remote", "Atlantic", "Adventure"],
     featured: true,
@@ -110,8 +107,7 @@ export const explorePlaces: ExplorePlace[] = [
     note: "Camping",
     top: "45%",
     left: "28%",
-    background:
-      "linear-gradient(135deg, rgba(214, 176, 137, 0.95), rgba(120, 88, 73, 0.9))",
+    background: "rgba(214, 176, 137, 0.95)",
     highlights: ["Rock arch", "Night sky", "Sunset scramble"],
     tags: ["Camping", "Stargazing", "Granite"],
     featured: false,
@@ -130,8 +126,7 @@ export const explorePlaces: ExplorePlace[] = [
     note: "Town base",
     top: "56%",
     left: "17%",
-    background:
-      "linear-gradient(135deg, rgba(150, 211, 229, 0.94), rgba(67, 118, 140, 0.88))",
+    background: "rgba(150, 211, 229, 0.94)",
     highlights: ["Oceanfront stay", "Cafe strip", "Day-trip hub"],
     tags: ["Food", "Basecamp", "Ocean"],
     featured: false,
@@ -150,8 +145,7 @@ export const explorePlaces: ExplorePlace[] = [
     note: "Detour",
     top: "83%",
     left: "51%",
-    background:
-      "linear-gradient(135deg, rgba(203, 167, 130, 0.94), rgba(111, 74, 49, 0.9))",
+    background: "rgba(203, 167, 130, 0.94)",
     highlights: ["Main viewpoint", "Canyon rim", "Long-form drive"],
     tags: ["Detour", "Road trip", "South"],
     featured: false,

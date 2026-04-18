@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f2eb;
+  --background: #f7f7f5;
   --foreground: #17181a;
   --surface: rgba(255, 255, 255, 0.78);
   --surface-strong: rgba(255, 255, 255, 0.92);
@@ -25,11 +25,7 @@
 }
 
 html {
-  background:
-    radial-gradient(circle at top right, rgba(255, 210, 130, 0.6), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(119, 219, 238, 0.3), transparent 28%),
-    radial-gradient(circle at center left, rgba(169, 226, 234, 0.18), transparent 22%),
-    linear-gradient(135deg, #f1ecd7 0%, #e8efe0 46%, #d3efef 100%);
+  background: #f7f7f5;
 }
 
 body {
@@ -58,10 +54,7 @@ textarea {
 }
 
 .wandr-shell-bg {
-  background:
-    radial-gradient(circle at 34% 24%, rgba(253, 225, 128, 0.5), transparent 0, transparent 18%),
-    radial-gradient(circle at 100% 0%, rgba(117, 226, 229, 0.34), transparent 0, transparent 36%),
-    linear-gradient(115deg, #b3a86e 0%, #d6d3b7 28%, #dbe4cb 62%, #95dbdd 100%);
+  background: #f7f7f5;
 }
 
 .surface-card {
@@ -101,49 +94,6 @@ textarea {
   transform: scale(0.98);
 }
 
-.map-canvas {
-  position: relative;
-  overflow: hidden;
-  border-radius: 2rem;
-  border: 1px solid rgba(21, 24, 26, 0.08);
-  background:
-    radial-gradient(circle at 24% 22%, rgba(245, 232, 176, 0.9), transparent 18%),
-    radial-gradient(circle at 82% 76%, rgba(112, 216, 233, 0.46), transparent 24%),
-    linear-gradient(135deg, rgba(255, 247, 231, 0.92), rgba(229, 246, 241, 0.82));
-}
-
-.map-canvas::before {
-  position: absolute;
-  inset: 0;
-  content: "";
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
-  background-size: 56px 56px;
-  opacity: 0.26;
-}
-
-.map-canvas::after {
-  position: absolute;
-  inset: 10% -8% 12% 10%;
-  content: "";
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at center, rgba(113, 200, 215, 0.18), transparent 55%),
-    linear-gradient(120deg, transparent 15%, rgba(244, 216, 130, 0.42) 40%, transparent 56%),
-    linear-gradient(25deg, transparent 28%, rgba(146, 223, 168, 0.28) 48%, transparent 60%);
-  filter: blur(10px);
-}
-
-.map-road {
-  position: absolute;
-  height: 10px;
-  border-radius: 9999px;
-  background: linear-gradient(90deg, rgba(244, 190, 78, 0.9), rgba(241, 208, 132, 0.9));
-  box-shadow: 0 0 0 3px rgba(255, 250, 235, 0.52);
-  opacity: 0.95;
-}
-
 .eyebrow {
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -163,9 +113,6 @@ textarea {
   transition:
     opacity 220ms ease,
     visibility 220ms ease;
-}
-
-.explore-mapbox-canvas {
   background: transparent;
 }
 
@@ -178,10 +125,7 @@ textarea {
 .explore-mapbox-loader {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.46), transparent 0, transparent 18%),
-    radial-gradient(circle at 82% 14%, rgba(213, 224, 230, 0.3), transparent 0, transparent 22%),
-    linear-gradient(180deg, rgba(241, 242, 237, 0.94), rgba(232, 235, 229, 0.9));
+  background: rgba(241, 242, 237, 0.94);
   opacity: 1;
   transition:
     opacity 260ms ease,
@@ -194,8 +138,7 @@ textarea {
   position: absolute;
   inset: 0;
   content: "";
-  background:
-    linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.32) 50%, transparent 70%);
+  background: rgba(255, 255, 255, 0.2);
   transform: translateX(-100%);
   animation: explore-map-loader-shimmer 1.4s ease-in-out infinite;
 }
@@ -218,13 +161,7 @@ textarea {
   position: absolute;
   inset: 0;
   content: "";
-  background:
-    radial-gradient(circle at 32% 24%, rgba(249, 224, 132, 0.2), transparent 0, transparent 22%),
-    radial-gradient(circle at 100% 0%, rgba(120, 229, 232, 0.18), transparent 0, transparent 34%);
   pointer-events: none;
-}
-
-.explore-mapbox-canvas::after {
   opacity: 0;
 }
 
@@ -274,9 +211,7 @@ textarea {
 @media (max-width: 1023px) {
   .ios-tab-bar {
     border: 1px solid rgba(255, 255, 255, 0.72);
-    background:
-      linear-gradient(180deg, rgba(249, 249, 249, 0.84), rgba(243, 244, 246, 0.76)),
-      rgba(249, 249, 249, 0.72);
+    background: rgba(249, 249, 249, 0.84);
     box-shadow:
       0 18px 42px rgba(15, 23, 42, 0.14),
       0 1px 0 rgba(255, 255, 255, 0.65) inset,

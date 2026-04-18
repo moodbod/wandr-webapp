@@ -1,7 +1,6 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
-import { getAuthMapStillUrl } from "@/lib/mapbox-static";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -13,9 +12,6 @@ export function AuthScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn } = useAuthActions();
-  const mapStillUrl = getAuthMapStillUrl(
-    process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN,
-  );
   const mode: AuthMode =
     searchParams.get("mode") === "sign-up" ? "sign-up" : "sign-in";
   const [error, setError] = useState<string | null>(null);
@@ -58,128 +54,128 @@ export function AuthScreen() {
   }
 
   return (
-    <main className="relative h-screen overflow-hidden">
-      <div
-        className="fixed inset-0 z-0 bg-[#e9ece6] bg-cover bg-center bg-no-repeat"
-        style={mapStillUrl ? { backgroundImage: `url("${mapStillUrl}")` } : undefined}
-        aria-hidden="true"
-      />
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_22%_18%,rgba(255,228,136,0.16),transparent_0,transparent_26%),radial-gradient(circle_at_100%_0%,rgba(120,232,238,0.14),transparent_0,transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.22),rgba(255,255,255,0.06))]" />
-
-      <div className="relative z-10 flex h-full items-center justify-center p-4">
-        <section className="w-full max-w-[430px] rounded-[2rem] bg-white/94 p-7 shadow-[0_24px_70px_rgba(23,28,20,0.16)] backdrop-blur-[12px] md:p-8">
-          <div className="flex items-center justify-between gap-4">
-            <Link
-              href="/explore"
-              className="text-sm font-semibold tracking-[-0.02em] text-[#6b7568] transition hover:text-[#20241d]"
-            >
-              Explore
-            </Link>
-            <span className="text-sm font-semibold tracking-[-0.02em] text-[#838b80]">
-              {mode === "sign-in" ? "Sign in" : "Sign up"}
-            </span>
-          </div>
-
-          <div className="mt-8">
-            <div className="text-[0.72rem] font-bold uppercase tracking-[0.18em] text-[#838b80]">
-              Wandr
-            </div>
-            <h1 className="mt-3 text-[2rem] font-black tracking-[-0.07em] text-[#171a16]">
-              {mode === "sign-in" ? "Welcome back" : "Create account"}
-            </h1>
-            <p className="mt-2 text-sm text-[#6a7368]">
-              {mode === "sign-in"
-                ? "Continue planning."
-                : "Start saving your route."}
-            </p>
-          </div>
-
-          <form action={handleSubmit} className="mt-8 space-y-4">
-            {mode === "sign-up" ? (
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-[#40483d]">
-                  Name
-                </span>
-                <input
-                  required
-                  name="name"
-                  placeholder="Traveler name"
-                  className="w-full rounded-[1.1rem] border border-[#e7eadf] bg-[#f8f9f5] px-4 py-3.5 outline-none transition placeholder:text-[#97a08f] focus:border-[#9fe870] focus:bg-white"
-                />
-              </label>
-            ) : null}
-
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-[#40483d]">
-                Email
-              </span>
-              <input
-                required
-                name="email"
-                type="email"
-                autoComplete="email"
-                placeholder="traveler@wandr.app"
-                className="w-full rounded-[1.1rem] border border-[#e7eadf] bg-[#f8f9f5] px-4 py-3.5 outline-none transition placeholder:text-[#97a08f] focus:border-[#9fe870] focus:bg-white"
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-[#40483d]">
-                Password
-              </span>
-              <input
-                required
-                minLength={8}
-                name="password"
-                type="password"
-                autoComplete={
-                  mode === "sign-up" ? "new-password" : "current-password"
-                }
-                placeholder="At least 8 characters"
-                className="w-full rounded-[1.1rem] border border-[#e7eadf] bg-[#f8f9f5] px-4 py-3.5 outline-none transition placeholder:text-[#97a08f] focus:border-[#9fe870] focus:bg-white"
-              />
-            </label>
-
-            {error ? (
-              <div className="rounded-[1.1rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error}
-              </div>
-            ) : null}
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="pill-button flex w-full items-center justify-center gap-2 rounded-full bg-[#9fe870] px-5 py-3.5 font-semibold text-[#203811] disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {isSubmitting ? (
-                <>
-                  <LoaderCircle className="size-4 animate-spin" />
-                  Working...
-                </>
-              ) : mode === "sign-in" ? (
-                <>
-                  Enter Wandr
-                  <ArrowRight className="size-4" />
-                </>
-              ) : (
-                <>
-                  Create account
-                  <ArrowRight className="size-4" />
-                </>
-              )}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-[#6a7368]">
-            {mode === "sign-in" ? "Don't have an account?" : "Already have an account?"}{" "}
-            <Link
-              href={mode === "sign-in" ? "/auth?mode=sign-up" : "/auth"}
-              className="font-semibold text-[#203811] underline decoration-[#9fe870] underline-offset-4 transition hover:text-[#171a16]"
-            >
-              {mode === "sign-in" ? "Sign up" : "Sign in"}
-            </Link>
+    <main className="flex min-h-screen items-center justify-center bg-[#f7f7f5] px-4 py-12">
+      <div className="w-full max-w-[380px]">
+        {/* Brand */}
+        <div className="mb-10">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#9a9f97]">
+            Wandr
           </p>
-        </section>
+          <h1 className="mt-3 text-3xl font-extrabold tracking-[-0.04em] text-[#17181a]">
+            {mode === "sign-in" ? "Welcome back" : "Create account"}
+          </h1>
+          <p className="mt-1.5 text-sm text-[#71776e]">
+            {mode === "sign-in"
+              ? "Sign in to continue planning your trip."
+              : "Create an account to start saving your route."}
+          </p>
+        </div>
+
+        {/* Form */}
+        <form action={handleSubmit} className="space-y-5">
+          {mode === "sign-up" ? (
+            <div>
+              <label
+                htmlFor="auth-name"
+                className="mb-1.5 block text-xs font-semibold text-[#3a3f38]"
+              >
+                Name
+              </label>
+              <input
+                id="auth-name"
+                required
+                name="name"
+                placeholder="Your name"
+                className="h-12 w-full rounded-xl border border-[#e5e5e3] bg-white px-4 text-sm text-[#17181a] outline-none transition placeholder:text-[#b5b9b2] focus:border-[#17181a]"
+              />
+            </div>
+          ) : null}
+
+          <div>
+            <label
+              htmlFor="auth-email"
+              className="mb-1.5 block text-xs font-semibold text-[#3a3f38]"
+            >
+              Email
+            </label>
+            <input
+              id="auth-email"
+              required
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              className="h-12 w-full rounded-xl border border-[#e5e5e3] bg-white px-4 text-sm text-[#17181a] outline-none transition placeholder:text-[#b5b9b2] focus:border-[#17181a]"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="auth-password"
+              className="mb-1.5 block text-xs font-semibold text-[#3a3f38]"
+            >
+              Password
+            </label>
+            <input
+              id="auth-password"
+              required
+              minLength={8}
+              name="password"
+              type="password"
+              autoComplete={
+                mode === "sign-up" ? "new-password" : "current-password"
+              }
+              placeholder="At least 8 characters"
+              className="h-12 w-full rounded-xl border border-[#e5e5e3] bg-white px-4 text-sm text-[#17181a] outline-none transition placeholder:text-[#b5b9b2] focus:border-[#17181a]"
+            />
+          </div>
+
+          {error ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {error}
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="pill-button flex h-12 w-full items-center justify-center gap-2 bg-[#17181a] text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {isSubmitting ? (
+              <>
+                <LoaderCircle className="size-4 animate-spin" />
+                Working…
+              </>
+            ) : (
+              <>
+                {mode === "sign-in" ? "Sign in" : "Create account"}
+                <ArrowRight className="size-4" />
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Footer */}
+        <p className="mt-8 text-center text-sm text-[#71776e]">
+          {mode === "sign-in"
+            ? "Don't have an account?"
+            : "Already have an account?"}{" "}
+          <Link
+            href={mode === "sign-in" ? "/auth?mode=sign-up" : "/auth"}
+            className="font-semibold text-[#17181a] underline underline-offset-4"
+          >
+            {mode === "sign-in" ? "Sign up" : "Sign in"}
+          </Link>
+        </p>
+
+        <div className="mt-10 text-center">
+          <Link
+            href="/explore"
+            className="text-xs font-medium text-[#9a9f97] transition hover:text-[#17181a]"
+          >
+            Skip and explore →
+          </Link>
+        </div>
       </div>
     </main>
   );

@@ -9,6 +9,7 @@ import type { ViewerProfile } from "@/lib/types";
 import {
   Compass,
   LogIn,
+  LogOut,
   Map,
   Route,
   UserRound,
@@ -77,7 +78,6 @@ export function AppShell({
   const shouldMountExploreMap = isExploreRoute || hasExploreMapSession();
   const plannerHref = isAuthenticated ? "/trips" : "/auth";
   const displayName = viewer?.name ?? "Traveler";
-  const displayRole = viewer?.travelStyle ?? "Global Citizen";
   const initials =
     displayName
       .split(" ")
@@ -87,12 +87,8 @@ export function AppShell({
       .toUpperCase() || "T";
 
   async function handleSignOut() {
-    if (!isAuthenticated) {
-      return;
-    }
-
+    if (!isAuthenticated) return;
     setIsSigningOut(true);
-
     try {
       await signOut();
       startTransition(() => {
@@ -106,10 +102,10 @@ export function AppShell({
 
   return (
     <main
-      className={`relative px-3 py-3 lg:px-3 lg:py-3 ${
+      className={`relative ${
         isExploreRoute
           ? "h-screen overflow-hidden bg-transparent"
-          : "min-h-screen wandr-shell-bg"
+          : "min-h-screen bg-[#f7f7f5]"
       }`}
     >
       {shouldMountExploreMap ? (
@@ -120,34 +116,23 @@ export function AppShell({
       ) : null}
 
       <div
-        className={`relative z-10 mx-auto grid max-w-[1600px] gap-4 ${
+        className={`relative z-10 mx-auto grid max-w-[1600px] ${
           isExploreRoute
-            ? "h-full lg:grid-cols-[220px_minmax(0,1fr)]"
-            : "lg:min-h-[calc(100vh-1.5rem)] lg:grid-cols-[220px_minmax(0,1fr)]"
-        } ${
-          isExploreRoute ? "pointer-events-none" : ""
-        }`}
+            ? "h-full lg:grid-cols-[240px_minmax(0,1fr)]"
+            : "lg:min-h-screen lg:grid-cols-[240px_minmax(0,1fr)]"
+        } ${isExploreRoute ? "pointer-events-none" : ""}`}
       >
-        <aside className="pointer-events-auto hidden rounded-[1.35rem] border border-white/50 bg-white/88 p-5 shadow-[0_12px_30px_rgba(29,36,22,0.08)] lg:flex lg:flex-col">
-          <p className="text-[2rem] font-black tracking-[-0.06em] text-[#1d2019]">
-            Traveler
-          </p>
-
-          <div className="mt-11 flex items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-full bg-[linear-gradient(180deg,#374151,#111827)] text-sm font-extrabold text-white">
-              {initials}
-            </div>
-            <div>
-              <p className="text-[1.1rem] font-bold leading-none tracking-[-0.03em] text-[#21241c]">
-                {displayName}
-              </p>
-              <p className="mt-1 text-sm font-medium text-[#677062]">
-                {displayRole}
-              </p>
-            </div>
+        {/* ─── Desktop sidebar ─── */}
+        <aside className="pointer-events-auto hidden lg:flex lg:flex-col border-r border-[#e8e8e6] bg-[#fafaf8] px-3 py-4">
+          {/* Brand */}
+          <div className="px-3 pb-5">
+            <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[#9a9f97]">
+              Wandr
+            </p>
           </div>
 
-          <nav className="mt-6 space-y-2">
+          {/* Nav links */}
+          <nav className="flex-1 space-y-0.5">
             {navigation.map((item) => {
               const href =
                 !isAuthenticated && item.requiresAuth ? "/auth" : item.href;
@@ -157,93 +142,114 @@ export function AppShell({
                 <Link
                   key={item.id}
                   href={href}
-                  className={`pill-button flex items-center gap-3 rounded-[1rem] px-4 py-3 font-semibold ${
+                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-[0.82rem] font-medium transition-colors ${
                     active
-                      ? "bg-[#9fe870] text-[#294115]"
-                      : "text-[#4f5948] hover:bg-[#f2f5ed]"
+                      ? "bg-[#ededeb] text-[#17181a]"
+                      : "text-[#6b706a] hover:bg-[#f0f0ee] hover:text-[#17181a]"
                   }`}
                 >
-                  <item.icon className="size-4" />
+                  <item.icon
+                    className={`size-[1.1rem] ${
+                      active
+                        ? "text-[#17181a]"
+                        : "text-[#9a9f97]"
+                    }`}
+                    strokeWidth={active ? 2.2 : 1.8}
+                  />
                   {item.label}
                 </Link>
               );
             })}
           </nav>
 
-          <div className="mt-auto">
-            {isAuthenticated ? (
-              <Link
-                href={plannerHref}
-                className="pill-button flex w-full items-center justify-center gap-2 rounded-[1rem] bg-[#9fe870] px-4 py-4 font-bold text-[#294115]"
-              >
-                <Route className="size-4" />
-                Start Planning
-              </Link>
-            ) : (
-              <Link
-                href={plannerHref}
-                className="pill-button flex w-full items-center justify-center gap-2 rounded-[1rem] bg-[#9fe870] px-4 py-4 font-bold text-[#294115]"
-              >
-                <LogIn className="size-4" />
-                Start Planning
-              </Link>
-            )}
+          {/* CTA */}
+          <div className="mt-auto space-y-2 px-1 pt-4">
+            <Link
+              href={plannerHref}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#9fe870] px-4 py-3 text-sm font-bold text-[#163300] shadow-sm transition-transform active:scale-[0.98]"
+            >
+              <Route className="size-4" />
+              Plan trip
+            </Link>
+
+            {/* User footer */}
+            <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#17181a] text-[0.6rem] font-bold text-white">
+                {initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold text-[#17181a]">
+                  {displayName}
+                </p>
+              </div>
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={isSigningOut}
+                  className="rounded-md p-1 text-[#9a9f97] transition-colors hover:text-[#17181a] disabled:opacity-50"
+                  aria-label="Sign out"
+                >
+                  <LogOut className="size-3.5" />
+                </button>
+              ) : (
+                <Link
+                  href="/auth"
+                  className="rounded-md p-1 text-[#9a9f97] transition-colors hover:text-[#17181a]"
+                  aria-label="Sign in"
+                >
+                  <LogIn className="size-3.5" />
+                </Link>
+              )}
+            </div>
           </div>
         </aside>
 
+        {/* ─── Main content ─── */}
         <div
           className={`min-w-0 ${
             isExploreRoute
               ? "h-full overflow-hidden lg:flex lg:flex-col"
-              : "pb-24 lg:flex lg:min-h-[calc(100vh-1.5rem)] lg:flex-col lg:pb-0"
+              : "px-4 py-4 pb-24 lg:px-6 lg:pb-6"
           }`}
         >
-          <header
-            className={`pointer-events-auto mb-4 flex items-center justify-between rounded-[1.75rem] border border-white/50 bg-white/88 px-4 py-3 shadow-[0_12px_30px_rgba(29,36,22,0.08)] lg:hidden ${
-              isExploreRoute ? "hidden" : ""
-            }`}
-          >
-            <div>
-              <p className="text-sm font-semibold text-[#5b635d]">Wandr</p>
-              <p className="text-lg font-semibold tracking-tight text-[#17181a]">
-                {displayName}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {isAuthenticated ? (
-                <Link
-                  href={plannerHref}
-                  className="pill-button rounded-full bg-[#9fe870] px-4 py-2 text-sm font-semibold text-[#294115]"
-                >
-                  Plan
-                </Link>
-              ) : null}
-              {isAuthenticated ? (
-                <button
-                  type="button"
-                  disabled={isSigningOut}
-                  onClick={handleSignOut}
-                  className="pill-button rounded-full bg-[#17181a] px-4 py-2 text-sm font-semibold text-white disabled:opacity-70"
-                >
-                  {isSigningOut ? "..." : "Sign out"}
-                </button>
-              ) : null}
-              {!isAuthenticated ? (
-                <Link
-                  href="/auth"
-                  className="pill-button rounded-full bg-[#17181a] px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Log in
-                </Link>
-              ) : null}
-            </div>
-          </header>
+          {/* Mobile header — non-explore only */}
+          {!isExploreRoute ? (
+            <header className="mb-4 flex items-center justify-between lg:hidden">
+              <div>
+                <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[#9a9f97]">
+                  Wandr
+                </p>
+                <p className="text-base font-semibold text-[#17181a]">
+                  {displayName}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {isAuthenticated ? (
+                  <Link
+                    href={plannerHref}
+                    className="rounded-full bg-[#9fe870] px-4 py-2 text-xs font-bold text-[#163300] shadow-sm"
+                  >
+                    Plan
+                  </Link>
+                ) : (
+                  <Link
+                    href="/auth"
+                    className="rounded-full bg-[#17181a] px-3.5 py-2 text-xs font-semibold text-white"
+                  >
+                    Log in
+                  </Link>
+                )}
+              </div>
+            </header>
+          ) : null}
 
           {children}
         </div>
       </div>
 
-      <nav className="ios-tab-bar fixed inset-x-4 bottom-[calc(0.7rem+var(--safe-area-bottom))] z-50 flex items-center justify-between rounded-[1.55rem] px-2 py-1.5 lg:hidden">
+      {/* ─── Mobile tab bar ─── */}
+      <nav className="ios-tab-bar fixed inset-x-4 bottom-[calc(0.7rem+var(--safe-area-bottom))] z-50 flex items-center justify-between rounded-2xl px-2 py-1.5 lg:hidden">
         {navigation.map((item) => {
           const href =
             !isAuthenticated && item.requiresAuth ? "/auth" : item.href;
@@ -253,14 +259,14 @@ export function AppShell({
             <Link
               key={`${item.id}-mobile`}
               href={href}
-              className={`ios-tab-item flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[0.9rem] px-1 py-1 text-[0.68rem] font-medium ${
+              className={`ios-tab-item flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 text-[0.68rem] font-medium ${
                 active
-                  ? "ios-tab-item-active text-[#007aff]"
-                  : "text-[#6d7480]"
+                  ? "ios-tab-item-active text-[#17181a]"
+                  : "text-[#9a9f97]"
               }`}
               aria-current={active ? "page" : undefined}
             >
-              <item.icon className="size-[1.35rem] stroke-[2.15]" />
+              <item.icon className="size-[1.35rem]" strokeWidth={active ? 2.2 : 1.6} />
               {item.label}
             </Link>
           );

@@ -1,98 +1,313 @@
-import { PageIntro } from "@/components/ui/page-intro";
-import { api } from "@/convex/_generated/api";
-import { fetchAuthQuery } from "@/lib/auth-server";
-import { Compass, LogOut, Settings2, UserRound } from "lucide-react";
+"use client";
 
-export default async function ProfilePage() {
-  const viewer = await fetchAuthQuery(api.users.getViewerProfile, {});
-  const preferredActivities: string[] = viewer.preferredActivities.length
+import { api } from "@/convex/_generated/api";
+import { useMutation, useQuery } from "convex/react";
+import {
+  Compass,
+  Globe,
+  Heart,
+  Mail,
+  MapPin,
+  Sparkles,
+  Pencil,
+  Check,
+  X,
+  LoaderCircle,
+} from "lucide-react";
+import { useState } from "react";
+
+const allActivities = [
+  "Wildlife",
+  "Road trips",
+  "Photography",
+  "Hiking",
+  "Culture",
+  "Food & Wine",
+  "Relaxation",
+  "Adventure",
+];
+
+const travelStyles = [
+  "Global Citizen",
+  "Luxury Traveler",
+  "Backpacker",
+  "Family Explorer",
+  "Digital Nomad",
+  "Weekend Warrior",
+];
+
+export default function ProfilePage() {
+  const viewer = useQuery(api.users.getViewerProfile);
+  const updatePreferences = useMutation(api.users.updateViewerPreferences);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  // Form State
+  const [draftHomeCountry, setDraftHomeCountry] = useState<string | null>(null);
+  const [draftTravelStyle, setDraftTravelStyle] = useState<string | null>(null);
+  const [draftActivities, setDraftActivities] = useState<string[]>([]);
+
+  if (viewer === undefined) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <LoaderCircle className="size-8 animate-spin text-[#9a9f97]" />
+      </div>
+    );
+  }
+
+  if (viewer === null) {
+    return null; // Not authenticated
+  }
+
+  const activities = viewer.preferredActivities.length
     ? viewer.preferredActivities
     : ["Wildlife", "Road trips", "Photography"];
 
-  return (
-    <div className="space-y-6">
-      <PageIntro
-        eyebrow="Phase 1"
-        title="Profile"
-        description="User identity, preferences scaffolding, and protected account access are connected. Editable settings expand in phase 10."
-      />
+  const initials =
+    viewer.name
+      .split(" ")
+      .map((p) => p[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "T";
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_360px]">
-        <article className="surface-card-strong rounded-[2rem] p-6">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex size-16 items-center justify-center rounded-full bg-[#9fe870]/60 text-[#203811]">
-                <UserRound className="size-8" />
+  function handleEdit() {
+    setDraftHomeCountry(viewer.homeCountry);
+    setDraftTravelStyle(viewer.travelStyle);
+    setDraftActivities(activities);
+    setIsEditing(true);
+  }
+
+  function handleCancel() {
+    setIsEditing(false);
+  }
+
+  async function handleSave() {
+    setBusy(true);
+    try {
+      await updatePreferences({
+        homeCountry: draftHomeCountry?.trim() || null,
+        travelStyle: draftTravelStyle || null,
+        preferredActivities: draftActivities,
+      });
+      setIsEditing(false);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function toggleActivity(activity: string) {
+    if (draftActivities.includes(activity)) {
+      setDraftActivities((prev) => prev.filter((a) => a !== activity));
+    } else {
+      setDraftActivities((prev) => [...prev, activity]);
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-8">
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-full bg-[#17181a] text-lg font-bold text-white">
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-tight text-[#17181a]">
+              {viewer.name}
+            </h1>
+            <p className="mt-0.5 flex items-center gap-1.5 text-sm text-[#71776e]">
+              <Mail className="size-3.5" />
+              {viewer.email}
+            </p>
+          </div>
+        </div>
+
+        {!isEditing ? (
+          <button
+            type="button"
+            onClick={handleEdit}
+            className="pill-button flex h-10 items-center gap-2 rounded-xl bg-[#ededeb] px-4 text-xs font-semibold text-[#17181a] hover:bg-[#e4e4e2]"
+          >
+            <Pencil className="size-3.5" />
+            Edit Profile
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={busy}
+              className="pill-button flex h-10 items-center justify-center rounded-xl border border-[#e5e5e3] bg-white px-3 text-[#5d635a] hover:bg-[#fafaf8]"
+            >
+              <X className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={busy}
+              className="pill-button flex h-10 items-center gap-2 rounded-xl bg-[#9fe870] px-4 text-xs font-bold text-[#163300] shadow-sm disabled:opacity-60"
+            >
+              {busy ? (
+                <LoaderCircle className="size-3.5 animate-spin" />
+              ) : (
+                <Check className="size-4" />
+              )}
+              Save
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Info rows ── */}
+      <div className="divide-y divide-[#f0f0ee]">
+        {/* Travel style */}
+        <div className="flex flex-col py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#f2f2f0]">
+              <Compass className="size-4 text-[#71776e]" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#17181a]">
+                Travel style
+              </p>
+              <p className="text-xs text-[#9a9f97]">How you like to explore</p>
+            </div>
+          </div>
+          <div className="mt-4 sm:mt-0">
+            {isEditing ? (
+              <select
+                value={draftTravelStyle ?? ""}
+                onChange={(e) => setDraftTravelStyle(e.target.value)}
+                className="w-full rounded-xl border border-[#e5e5e3] bg-white px-3 py-2 text-sm font-medium text-[#17181a] outline-none focus:border-[#17181a] sm:w-auto"
+              >
+                <option value="" disabled>
+                  Select a style
+                </option>
+                {travelStyles.map((style) => (
+                  <option key={style} value={style}>
+                    {style}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-sm font-medium text-[#3a3f38]">
+                {viewer.travelStyle ?? "Not set"}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Home country */}
+        <div className="flex flex-col py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#f2f2f0]">
+              <Globe className="size-4 text-[#71776e]" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#17181a]">
+                Home country
+              </p>
+              <p className="text-xs text-[#9a9f97]">Where you're from</p>
+            </div>
+          </div>
+          <div className="mt-4 sm:mt-0">
+            {isEditing ? (
+              <input
+                type="text"
+                placeholder="e.g. United Kingdom"
+                value={draftHomeCountry ?? ""}
+                onChange={(e) => setDraftHomeCountry(e.target.value)}
+                className="w-full rounded-xl border border-[#e5e5e3] bg-white px-3 py-2 text-sm font-medium text-[#17181a] outline-none placeholder:text-[#b5b9b2] focus:border-[#17181a] sm:w-auto sm:text-right"
+              />
+            ) : (
+              <p className="text-sm font-medium text-[#3a3f38]">
+                {viewer.homeCountry ?? "Not set"}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Onboarding */}
+        {!isEditing && (
+          <div className="flex items-center justify-between py-5">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#f2f2f0]">
+                <Sparkles className="size-4 text-[#71776e]" />
               </div>
               <div>
-                <p className="eyebrow">Traveler</p>
-                <h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#16181a]">
-                  {viewer.name}
-                </h2>
-                <p className="mt-1 text-sm text-[#5d655f]">{viewer.email}</p>
+                <p className="text-sm font-semibold text-[#17181a]">
+                  Onboarding
+                </p>
+                <p className="text-xs text-[#9a9f97]">Profile setup progress</p>
               </div>
             </div>
-
-            <div className="rounded-[1.5rem] bg-black/[0.03] px-4 py-3 text-sm font-semibold text-[#4e564f]">
-              Authenticated workspace
-            </div>
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                viewer.onboardingCompleted
+                  ? "bg-[#e8f5e0] text-[#2d5a1b]"
+                  : "bg-[#f5f0e0] text-[#6b5a2d]"
+              }`}
+            >
+              {viewer.onboardingCompleted ? "Complete" : "Pending"}
+            </span>
           </div>
+        )}
+      </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            <div className="rounded-[1.75rem] border border-black/8 bg-white/72 p-5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-[#3e463d]">
-                <Compass className="size-4 text-[#8bd65b]" />
-                Travel style
-              </div>
-              <p className="mt-3 text-2xl font-semibold tracking-tight text-[#15181a]">
-                {viewer.travelStyle ?? "To be set in phase 10"}
-              </p>
-              <p className="mt-2 text-sm leading-7 text-[#5b635d]">
-                Preference fields already exist in Convex, so we can grow into
-                a fully editable profile without restructuring the data model.
-              </p>
-            </div>
-
-            <div className="rounded-[1.75rem] border border-black/8 bg-white/72 p-5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-[#3e463d]">
-                <Settings2 className="size-4 text-[#8bd65b]" />
-                Preference scaffolding
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {preferredActivities.map((activity) => (
-                  <span
+      {/* ── Interests ── */}
+      <div className="pt-2">
+        <div className="flex items-center gap-2">
+          <Heart className="size-4 text-[#9a9f97]" />
+          <h2 className="text-sm font-semibold text-[#17181a]">Interests</h2>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {isEditing
+            ? allActivities.map((activity) => {
+                const isSelected = draftActivities.includes(activity);
+                return (
+                  <button
                     key={activity}
-                    className="rounded-full bg-[#edf7e5] px-3 py-1 text-sm font-semibold text-[#314a22]"
+                    type="button"
+                    onClick={() => toggleActivity(activity)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                      isSelected
+                        ? "bg-[#17181a] text-white"
+                        : "bg-[#ededeb] text-[#5d635a] hover:bg-[#e4e4e2]"
+                    }`}
                   >
                     {activity}
-                  </span>
-                ))}
-              </div>
+                  </button>
+                );
+              })
+            : activities.map((activity) => (
+                <span
+                  key={activity}
+                  className="rounded-full bg-[#ededeb] px-3 py-1.5 text-xs font-medium text-[#3a3f38]"
+                >
+                  {activity}
+                </span>
+              ))}
+        </div>
+      </div>
+
+      {/* ── Account section ── */}
+      {!isEditing && (
+        <div className="rounded-xl border border-[#e8e8e6] p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-[#f2f2f0]">
+              <MapPin className="size-4 text-[#71776e]" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#17181a]">Account</p>
+              <p className="text-xs text-[#9a9f97]">
+                Your account is currently active and authenticated.
+              </p>
             </div>
           </div>
-        </article>
-
-        <aside className="surface-card rounded-[2rem] p-6">
-          <div className="eyebrow">Phase Status</div>
-          <h3 className="mt-2 text-2xl font-semibold tracking-tight text-[#16181a]">
-            Foundations complete
-          </h3>
-          <p className="mt-3 text-sm leading-7 text-[#5b635d]">
-            Protected routes, auth session handling, reusable layout primitives,
-            and user profile storage are all in place.
-          </p>
-
-          <div className="mt-6 rounded-[1.5rem] bg-black/[0.03] p-4 text-sm leading-7 text-[#555d57]">
-            Sign out is available from the sidebar and mobile header so the
-            workspace behaves like a real application, not a static prototype.
-          </div>
-
-          <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-[#444c43]">
-            <LogOut className="size-4 text-[#8bd65b]" />
-            Session controls live in the shell
-          </div>
-        </aside>
-      </section>
+        </div>
+      )}
     </div>
   );
 }
