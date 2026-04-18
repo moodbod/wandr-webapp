@@ -1,9 +1,8 @@
 "use client";
 
-import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
+import { ConvexAuthNextjsProvider } from "@convex-dev/auth/nextjs";
 import { ConvexReactClient } from "convex/react";
 import type { ReactNode } from "react";
-import { authClient } from "@/lib/auth-client";
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 let convex: ConvexReactClient | null = null;
@@ -19,10 +18,8 @@ function getConvexClient() {
 
 export function ConvexClientProvider({
   children,
-  initialToken,
 }: {
   children: ReactNode;
-  initialToken?: string | null;
 }) {
   const client = getConvexClient();
 
@@ -41,12 +38,6 @@ export function ConvexClientProvider({
   }
 
   return (
-    <ConvexBetterAuthProvider
-      authClient={authClient}
-      client={client}
-      initialToken={initialToken}
-    >
-      {children}
-    </ConvexBetterAuthProvider>
+    <ConvexAuthNextjsProvider client={client}>{children}</ConvexAuthNextjsProvider>
   );
 }

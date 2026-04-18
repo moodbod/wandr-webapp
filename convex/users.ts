@@ -1,32 +1,34 @@
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { authComponent } from "./auth";
 
 export const getViewerProfile = query({
   args: {},
   handler: async (ctx) => {
-    const authUser = await authComponent.getAuthUser(ctx);
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_auth_user_id", (q) => q.eq("authUserId", authUser._id))
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated.");
+    }
+
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      throw new Error("Authenticated user profile is missing.");
+    }
+
+    const preferences = await ctx.db
+      .query("userPreferences")
+      .withIndex("by_user_id", (q) => q.eq("userId", user._id))
       .unique();
 
-    const preferences = user
-      ? await ctx.db
-          .query("userPreferences")
-          .withIndex("by_user_id", (q) => q.eq("userId", user._id))
-          .unique()
-      : null;
-
     return {
-      authUserId: authUser._id,
-      profileId: user?._id ?? null,
-      name: user?.name ?? authUser.name ?? "Traveler",
-      email: user?.email ?? authUser.email ?? "",
-      avatarUrl: user?.avatarUrl ?? authUser.image ?? null,
-      onboardingCompleted: user?.onboardingCompleted ?? false,
-      homeCountry: preferences?.homeCountry ?? user?.homeCountry ?? null,
-      travelStyle: preferences?.travelStyle ?? user?.travelStyle ?? null,
+      userId: user._id,
+      profileId: user._id,
+      name: user.name ?? "Traveler",
+      email: user.email ?? "",
+      avatarUrl: user.image ?? user.avatarUrl ?? null,
+      onboardingCompleted: user.onboardingCompleted ?? false,
+      homeCountry: preferences?.homeCountry ?? user.homeCountry ?? null,
+      travelStyle: preferences?.travelStyle ?? user.travelStyle ?? null,
       preferredActivities: preferences?.preferredActivities ?? [],
     };
   },
@@ -39,36 +41,20 @@ export const updateViewerPreferences = mutation({
     preferredActivities: v.array(v.string()),
   },
   handler: async (ctx, args) => {
-    const authUser = await authComponent.getAuthUser(ctx);
-
-    let user = await ctx.db
-      .query("users")
-      .withIndex("by_auth_user_id", (q) => q.eq("authUserId", authUser._id))
-      .unique();
-
-    if (!user) {
-      const userId = await ctx.db.insert("users", {
-        authUserId: authUser._id,
-        name: authUser.name ?? "Traveler",
-        email: authUser.email ?? "",
-        avatarUrl: authUser.image ?? null,
-        createdAt: Date.now(),
-        onboardingCompleted: false,
-        homeCountry: args.homeCountry,
-        travelStyle: args.travelStyle,
-      });
-
-      user = await ctx.db.get(userId);
-    } else {
-      await ctx.db.patch(user._id, {
-        homeCountry: args.homeCountry,
-        travelStyle: args.travelStyle,
-      });
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated.");
     }
 
+    const user = await ctx.db.get(userId);
     if (!user) {
-      throw new Error("Unable to create the viewer profile.");
+      throw new Error("Authenticated user profile is missing.");
     }
+
+    await ctx.db.patch(user._id, {
+      homeCountry: args.homeCountry,
+      travelStyle: args.travelStyle,
+    });
 
     const existingPreferences = await ctx.db
       .query("userPreferences")

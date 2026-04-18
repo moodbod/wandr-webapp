@@ -1,6 +1,6 @@
 "use client";
 
-import { authClient } from "@/lib/auth-client";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { getAuthMapStillUrl } from "@/lib/mapbox-static";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import Link from "next/link";
@@ -12,6 +12,7 @@ type AuthMode = "sign-in" | "sign-up";
 export function AuthScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { signIn } = useAuthActions();
   const mapStillUrl = getAuthMapStillUrl(
     process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN,
   );
@@ -29,20 +30,15 @@ export function AuthScreen() {
     setIsSubmitting(true);
 
     try {
-      const result =
-        mode === "sign-up"
-          ? await authClient.signUp.email({
-              email,
-              password,
-              name: name || "Traveler",
-            })
-          : await authClient.signIn.email({
-              email,
-              password,
-            });
+      const result = await signIn("password", {
+        email,
+        password,
+        flow: mode === "sign-up" ? "signUp" : "signIn",
+        ...(mode === "sign-up" ? { name: name || "Traveler" } : {}),
+      });
 
-      if (result.error) {
-        setError(result.error.message ?? "Unable to continue.");
+      if (!result.signingIn) {
+        setError("Authentication needs another step before completing.");
         return;
       }
 

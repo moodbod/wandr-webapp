@@ -1,6 +1,6 @@
 export type ViewerProfile = {
-  authUserId: string;
-  profileId: string | null;
+  userId: string;
+  profileId: string;
   name: string;
   email: string;
   avatarUrl: string | null;

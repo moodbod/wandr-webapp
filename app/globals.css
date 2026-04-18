@@ -160,10 +160,19 @@ textarea {
 .explore-mapbox-canvas {
   position: absolute;
   overflow: hidden;
+  transition:
+    opacity 220ms ease,
+    visibility 220ms ease;
 }
 
 .explore-mapbox-canvas {
   background: transparent;
+}
+
+.explore-mapbox-canvas.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
 }
 
 .explore-mapbox-loader {

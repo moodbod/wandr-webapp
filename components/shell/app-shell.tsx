@@ -1,7 +1,10 @@
 "use client";
 
-import { authClient } from "@/lib/auth-client";
-import { ExploreMapboxCanvas } from "@/components/explore/explore-mapbox-canvas";
+import { useAuthActions } from "@convex-dev/auth/react";
+import {
+  ExploreMapboxCanvas,
+  hasExploreMapSession,
+} from "@/components/explore/explore-mapbox-canvas";
 import type { ViewerProfile } from "@/lib/types";
 import {
   Compass,
@@ -67,9 +70,11 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { signOut } = useAuthActions();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const isAuthenticated = Boolean(viewer);
   const isExploreRoute = isActivePath(pathname, "/explore");
+  const shouldMountExploreMap = isExploreRoute || hasExploreMapSession();
   const plannerHref = isAuthenticated ? "/trips" : "/auth";
   const displayName = viewer?.name ?? "Traveler";
   const displayRole = viewer?.travelStyle ?? "Global Citizen";
@@ -89,7 +94,7 @@ export function AppShell({
     setIsSigningOut(true);
 
     try {
-      await authClient.signOut();
+      await signOut();
       startTransition(() => {
         router.replace("/explore");
         router.refresh();
@@ -107,10 +112,11 @@ export function AppShell({
           : "min-h-screen wandr-shell-bg"
       }`}
     >
-      {isExploreRoute ? (
-        <>
-          <ExploreMapboxCanvas className="fixed inset-0 z-0" />
-        </>
+      {shouldMountExploreMap ? (
+        <ExploreMapboxCanvas
+          className="fixed inset-0 z-0"
+          isVisible={isExploreRoute}
+        />
       ) : null}
 
       <div

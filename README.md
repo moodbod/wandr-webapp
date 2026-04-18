@@ -7,12 +7,15 @@ The Next.js app expects these environment variables:
 ```bash
 NEXT_PUBLIC_CONVEX_URL=
 NEXT_PUBLIC_CONVEX_SITE_URL=
+SITE_URL=
 NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=
 ```
 
 `NEXT_PUBLIC_CONVEX_URL` should point at your Convex deployment URL ending in `.convex.cloud`.
 
 `NEXT_PUBLIC_CONVEX_SITE_URL` should point at your Convex site URL ending in `.convex.site`.
+
+`SITE_URL` should point at your public app origin, for example `http://localhost:3000` in local development.
 
 ## Getting Started
 
