@@ -10,6 +10,7 @@
   --border-strong: rgba(21, 24, 26, 0.18);
   --shadow-ring: 0 0 0 1px rgba(17, 24, 22, 0.06);
   --shadow-soft: 0 18px 40px rgba(28, 36, 30, 0.07);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @theme inline {
@@ -205,4 +206,38 @@ textarea {
 .explore-mapbox-canvas .mapboxgl-ctrl-attrib-button,
 .explore-mapbox-canvas .mapboxgl-ctrl-attrib a {
   color: #334127;
+}
+
+@media (max-width: 1023px) {
+  .ios-tab-bar {
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    background:
+      linear-gradient(180deg, rgba(249, 249, 249, 0.84), rgba(243, 244, 246, 0.76)),
+      rgba(249, 249, 249, 0.72);
+    box-shadow:
+      0 18px 42px rgba(15, 23, 42, 0.14),
+      0 1px 0 rgba(255, 255, 255, 0.65) inset,
+      0 0 0 0.5px rgba(17, 24, 39, 0.04);
+    backdrop-filter: blur(24px) saturate(1.25);
+  }
+
+  .ios-tab-item {
+    letter-spacing: -0.01em;
+    transition:
+      color 180ms ease,
+      transform 180ms ease,
+      opacity 180ms ease;
+  }
+
+  .ios-tab-item:hover {
+    transform: none;
+  }
+
+  .ios-tab-item svg {
+    color: inherit;
+  }
+
+  .ios-tab-item-active {
+    text-shadow: 0 0 0.01px currentColor;
+  }
 }

@@ -6,6 +6,7 @@ import mapboxgl from "mapbox-gl";
 const MAPBOX_STYLE = "mapbox://styles/mapbox/light-v11";
 const MAPBOX_CENTER: [number, number] = [17.0832, -22.5597];
 const MAPBOX_ZOOM = 5.15;
+export const EXPLORE_MAP_INTERACTION_EVENT = "wandr:explore-map-interaction";
 
 type ExploreMapboxCanvasProps = {
   className?: string;
@@ -22,6 +23,26 @@ export function ExploreMapboxCanvas({
     if (!token || !containerRef.current || mapRef.current) {
       return;
     }
+
+    let restoreTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const emitInteractionState = (isInteracting: boolean) => {
+      window.dispatchEvent(
+        new CustomEvent(EXPLORE_MAP_INTERACTION_EVENT, {
+          detail: { isInteracting },
+        }),
+      );
+    };
+
+    const scheduleRestore = () => {
+      if (restoreTimeout) {
+        clearTimeout(restoreTimeout);
+      }
+
+      restoreTimeout = setTimeout(() => {
+        emitInteractionState(false);
+      }, 180);
+    };
 
     mapboxgl.accessToken = token;
 
@@ -43,8 +64,22 @@ export function ExploreMapboxCanvas({
     map.on("load", () => {
       map.setFog({});
     });
+    map.on("dragstart", () => emitInteractionState(true));
+    map.on("dragend", scheduleRestore);
+    map.on("zoomstart", () => emitInteractionState(true));
+    map.on("zoomend", scheduleRestore);
+    map.on("rotatestart", () => emitInteractionState(true));
+    map.on("rotateend", scheduleRestore);
+    map.on("pitchstart", () => emitInteractionState(true));
+    map.on("pitchend", scheduleRestore);
+    map.on("movestart", () => emitInteractionState(true));
+    map.on("moveend", scheduleRestore);
 
     return () => {
+      if (restoreTimeout) {
+        clearTimeout(restoreTimeout);
+      }
+      emitInteractionState(false);
       map.remove();
       mapRef.current = null;
     };

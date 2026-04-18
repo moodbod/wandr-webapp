@@ -193,7 +193,11 @@ export function AppShell({
               : "pb-24 lg:flex lg:min-h-[calc(100vh-1.5rem)] lg:flex-col lg:pb-0"
           }`}
         >
-          <header className="pointer-events-auto mb-4 flex items-center justify-between rounded-[1.75rem] border border-white/50 bg-white/88 px-4 py-3 shadow-[0_12px_30px_rgba(29,36,22,0.08)] lg:hidden">
+          <header
+            className={`pointer-events-auto mb-4 flex items-center justify-between rounded-[1.75rem] border border-white/50 bg-white/88 px-4 py-3 shadow-[0_12px_30px_rgba(29,36,22,0.08)] lg:hidden ${
+              isExploreRoute ? "hidden" : ""
+            }`}
+          >
             <div>
               <p className="text-sm font-semibold text-[#5b635d]">Wandr</p>
               <p className="text-lg font-semibold tracking-tight text-[#17181a]">
@@ -234,7 +238,7 @@ export function AppShell({
         </div>
       </div>
 
-      <nav className="surface-card-strong fixed inset-x-3 bottom-3 z-50 flex items-center justify-between rounded-[1.6rem] px-2 py-2 lg:hidden">
+      <nav className="ios-tab-bar fixed inset-x-4 bottom-[calc(0.7rem+var(--safe-area-bottom))] z-50 flex items-center justify-between rounded-[1.55rem] px-2 py-1.5 lg:hidden">
         {navigation.map((item) => {
           const href =
             !isAuthenticated && item.requiresAuth ? "/auth" : item.href;
@@ -244,13 +248,14 @@ export function AppShell({
             <Link
               key={`${item.id}-mobile`}
               href={href}
-              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.15rem] px-2 py-2 text-xs font-semibold ${
+              className={`ios-tab-item flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[0.9rem] px-1 py-1 text-[0.68rem] font-medium ${
                 active
-                  ? "bg-[#9fe870] text-[#203811]"
-                  : "text-[#566059]"
+                  ? "ios-tab-item-active text-[#007aff]"
+                  : "text-[#6d7480]"
               }`}
+              aria-current={active ? "page" : undefined}
             >
-              <item.icon className="size-4" />
+              <item.icon className="size-[1.35rem] stroke-[2.15]" />
               {item.label}
             </Link>
           );
