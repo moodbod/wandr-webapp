@@ -5,6 +5,9 @@ import { Compass, LogOut, Settings2, UserRound } from "lucide-react";
 
 export default async function ProfilePage() {
   const viewer = await fetchAuthQuery(api.users.getViewerProfile, {});
+  const preferredActivities: string[] = viewer.preferredActivities.length
+    ? viewer.preferredActivities
+    : ["Wildlife", "Road trips", "Photography"];
 
   return (
     <div className="space-y-6">
@@ -56,10 +59,7 @@ export default async function ProfilePage() {
                 Preference scaffolding
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
-                {(viewer.preferredActivities.length
-                  ? viewer.preferredActivities
-                  : ["Wildlife", "Road trips", "Photography"]
-                ).map((activity) => (
+                {preferredActivities.map((activity) => (
                   <span
                     key={activity}
                     className="rounded-full bg-[#edf7e5] px-3 py-1 text-sm font-semibold text-[#314a22]"
