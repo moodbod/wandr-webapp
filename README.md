@@ -45,14 +45,13 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-This repo includes [vercel.json](./vercel.json), which tells Vercel to build with Convex using `npx convex deploy --cmd "npm run build"`.
+If Vercel is only building Next.js and you deploy Convex separately, keep the Vercel build command as the default `next build` and set these Vercel environment variables manually:
 
-Before deploying to production, add these Vercel environment variables:
-
-- `CONVEX_DEPLOY_KEY` for your Convex production deployment
+- `NEXT_PUBLIC_CONVEX_URL` for your production `.convex.cloud` URL
 - `NEXT_PUBLIC_CONVEX_SITE_URL` for your production `.convex.site` URL
+- `SITE_URL` for your public site URL used by Better Auth
 
-That build step injects `NEXT_PUBLIC_CONVEX_URL` during the production build, so you do not need to hardcode the `.convex.cloud` URL in Vercel.
+If you want Vercel itself to run `npx convex deploy`, then you would switch to a Convex-aware build command and provide a deploy key. This repo does not require that flow.
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
