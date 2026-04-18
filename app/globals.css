@@ -166,6 +166,36 @@ textarea {
   background: transparent;
 }
 
+.explore-mapbox-loader {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.46), transparent 0, transparent 18%),
+    radial-gradient(circle at 82% 14%, rgba(213, 224, 230, 0.3), transparent 0, transparent 22%),
+    linear-gradient(180deg, rgba(241, 242, 237, 0.94), rgba(232, 235, 229, 0.9));
+  opacity: 1;
+  transition:
+    opacity 260ms ease,
+    visibility 260ms ease;
+  visibility: visible;
+  pointer-events: none;
+}
+
+.explore-mapbox-loader::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background:
+    linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.32) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: explore-map-loader-shimmer 1.4s ease-in-out infinite;
+}
+
+.explore-mapbox-loader.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
 .explore-mapbox-canvas .mapboxgl-map {
   opacity: 0;
   transition: opacity 220ms ease;
@@ -224,6 +254,12 @@ textarea {
 .explore-mapbox-canvas .mapboxgl-ctrl-attrib-button,
 .explore-mapbox-canvas .mapboxgl-ctrl-attrib a {
   color: #334127;
+}
+
+@keyframes explore-map-loader-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @media (max-width: 1023px) {

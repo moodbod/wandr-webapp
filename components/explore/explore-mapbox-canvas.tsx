@@ -99,6 +99,11 @@ export function ExploreMapboxCanvas({
       ref={containerRef}
       className={`explore-mapbox-canvas ${isMapReady ? "is-ready" : ""} ${className}`}
       aria-label="Explore map"
-    />
+    >
+      <div
+        className={`explore-mapbox-loader ${isMapReady ? "is-hidden" : ""}`}
+        aria-hidden="true"
+      />
+    </div>
   );
 }

@@ -110,7 +110,6 @@ export function AppShell({
       {isExploreRoute ? (
         <>
           <ExploreMapboxCanvas className="fixed inset-0 z-0" />
-          <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_28%_22%,rgba(255,225,137,0.22),transparent_0,transparent_55%),radial-gradient(circle_at_83%_12%,rgba(120,232,238,0.2),transparent_0,transparent_44%),radial-gradient(circle_at_58%_88%,rgba(159,232,112,0.08),transparent_0,transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.06))]" />
         </>
       ) : null}
 
