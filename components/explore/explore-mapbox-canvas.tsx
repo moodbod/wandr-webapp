@@ -10,10 +10,12 @@ export const EXPLORE_MAP_INTERACTION_EVENT = "wandr:explore-map-interaction";
 
 type ExploreMapboxCanvasProps = {
   className?: string;
+  showLoader?: boolean;
 };
 
 export function ExploreMapboxCanvas({
   className = "",
+  showLoader = true,
 }: ExploreMapboxCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -100,10 +102,12 @@ export function ExploreMapboxCanvas({
       className={`explore-mapbox-canvas ${isMapReady ? "is-ready" : ""} ${className}`}
       aria-label="Explore map"
     >
-      <div
-        className={`explore-mapbox-loader ${isMapReady ? "is-hidden" : ""}`}
-        aria-hidden="true"
-      />
+      {showLoader ? (
+        <div
+          className={`explore-mapbox-loader ${isMapReady ? "is-hidden" : ""}`}
+          aria-hidden="true"
+        />
+      ) : null}
     </div>
   );
 }

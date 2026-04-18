@@ -1,7 +1,7 @@
 "use client";
 
-import { ExploreMapboxCanvas } from "@/components/explore/explore-mapbox-canvas";
 import { authClient } from "@/lib/auth-client";
+import { getAuthMapStillUrl } from "@/lib/mapbox-static";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -12,6 +12,9 @@ type AuthMode = "sign-in" | "sign-up";
 export function AuthScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const mapStillUrl = getAuthMapStillUrl(
+    process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN,
+  );
   const mode: AuthMode =
     searchParams.get("mode") === "sign-up" ? "sign-up" : "sign-in";
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +63,12 @@ export function AuthScreen() {
 
   return (
     <main className="relative h-screen overflow-hidden">
-      <ExploreMapboxCanvas className="fixed inset-0 z-0" />
+      <div
+        className="fixed inset-0 z-0 bg-[#e9ece6] bg-cover bg-center bg-no-repeat"
+        style={mapStillUrl ? { backgroundImage: `url("${mapStillUrl}")` } : undefined}
+        aria-hidden="true"
+      />
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_22%_18%,rgba(255,228,136,0.16),transparent_0,transparent_26%),radial-gradient(circle_at_100%_0%,rgba(120,232,238,0.14),transparent_0,transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.22),rgba(255,255,255,0.06))]" />
 
       <div className="relative z-10 flex h-full items-center justify-center p-4">
         <section className="w-full max-w-[430px] rounded-[2rem] bg-white/94 p-7 shadow-[0_24px_70px_rgba(23,28,20,0.16)] backdrop-blur-[12px] md:p-8">
