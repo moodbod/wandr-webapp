@@ -4,14 +4,16 @@ import { ExploreMapboxCanvas } from "@/components/explore/explore-mapbox-canvas"
 import { authClient } from "@/lib/auth-client";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { startTransition, useState } from "react";
 
 type AuthMode = "sign-in" | "sign-up";
 
 export function AuthScreen() {
   const router = useRouter();
-  const [mode, setMode] = useState<AuthMode>("sign-in");
+  const searchParams = useSearchParams();
+  const mode: AuthMode =
+    searchParams.get("mode") === "sign-up" ? "sign-up" : "sign-in";
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -70,30 +72,9 @@ export function AuthScreen() {
             >
               Explore
             </Link>
-            <div className="rounded-full bg-[#f2f4ee] p-1">
-              <button
-                type="button"
-                onClick={() => setMode("sign-in")}
-                className={`pill-button px-4 py-2 text-sm font-semibold ${
-                  mode === "sign-in"
-                    ? "bg-white text-[#171a16] shadow-[0_6px_16px_rgba(0,0,0,0.07)]"
-                    : "text-[#667061]"
-                }`}
-              >
-                Sign in
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("sign-up")}
-                className={`pill-button px-4 py-2 text-sm font-semibold ${
-                  mode === "sign-up"
-                    ? "bg-white text-[#171a16] shadow-[0_6px_16px_rgba(0,0,0,0.07)]"
-                    : "text-[#667061]"
-                }`}
-              >
-                Sign up
-              </button>
-            </div>
+            <span className="text-sm font-semibold tracking-[-0.02em] text-[#838b80]">
+              {mode === "sign-in" ? "Sign in" : "Sign up"}
+            </span>
           </div>
 
           <div className="mt-8">
@@ -185,6 +166,16 @@ export function AuthScreen() {
               )}
             </button>
           </form>
+
+          <p className="mt-6 text-center text-sm text-[#6a7368]">
+            {mode === "sign-in" ? "Don't have an account?" : "Already have an account?"}{" "}
+            <Link
+              href={mode === "sign-in" ? "/auth?mode=sign-up" : "/auth"}
+              className="font-semibold text-[#203811] underline decoration-[#9fe870] underline-offset-4 transition hover:text-[#171a16]"
+            >
+              {mode === "sign-in" ? "Sign up" : "Sign in"}
+            </Link>
+          </p>
         </section>
       </div>
     </main>
