@@ -2,20 +2,32 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Environment Variables
 
-The Next.js app expects these environment variables:
+This app uses Convex Auth, so production config is split across the Next.js app
+and the Convex deployment.
+
+Next.js environment:
 
 ```bash
 NEXT_PUBLIC_CONVEX_URL=
 NEXT_PUBLIC_CONVEX_SITE_URL=
-SITE_URL=
 NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=
 ```
 
-`NEXT_PUBLIC_CONVEX_URL` should point at your Convex deployment URL ending in `.convex.cloud`.
+- `NEXT_PUBLIC_CONVEX_URL` should point at your Convex deployment URL ending in `.convex.cloud`.
+- `NEXT_PUBLIC_CONVEX_SITE_URL` should point at your Convex site URL ending in `.convex.site`.
+- `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` should point at your public Mapbox token.
 
-`NEXT_PUBLIC_CONVEX_SITE_URL` should point at your Convex site URL ending in `.convex.site`.
+Convex deployment environment:
 
-`SITE_URL` should point at your public app origin, for example `http://localhost:3000` in local development.
+```bash
+SITE_URL=
+JWT_PRIVATE_KEY=
+JWKS=
+```
+
+- `SITE_URL` should point at your public app origin, for example `http://localhost:3000` in local development or your production domain in live deploys.
+- `JWT_PRIVATE_KEY` and `JWKS` are required by Convex Auth to sign and verify auth tokens.
+- The easiest way to set the Convex auth variables is to run `npx @convex-dev/auth`.
 
 ## Getting Started
 
@@ -52,7 +64,17 @@ If Vercel is only building Next.js and you deploy Convex separately, keep the Ve
 
 - `NEXT_PUBLIC_CONVEX_URL` for your production `.convex.cloud` URL
 - `NEXT_PUBLIC_CONVEX_SITE_URL` for your production `.convex.site` URL
-- `SITE_URL` for your public site URL used by Better Auth
+- `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` for your public Mapbox token
+
+Then configure the Convex production deployment itself:
+
+```bash
+npx @convex-dev/auth --prod --web-server-url https://your-domain.com
+```
+
+That command writes the Convex Auth backend variables for the production deployment, including `SITE_URL`, `JWT_PRIVATE_KEY`, and `JWKS`.
+
+If `/api/auth` returns `Missing environment variable \`JWT_PRIVATE_KEY\``, your Next.js app is pointing at a Convex deployment that has not had the auth setup run yet.
 
 If you want Vercel itself to run `npx convex deploy`, then you would switch to a Convex-aware build command and provide a deploy key. This repo does not require that flow.
 

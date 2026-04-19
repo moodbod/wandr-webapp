@@ -30,7 +30,7 @@ export function ConvexClientProvider({
           <p className="font-sora text-lg font-semibold">Configuration error</p>
           <p className="mt-3 text-sm leading-6 text-stone-300">
             <code>NEXT_PUBLIC_CONVEX_URL</code> is missing for this deployment.
-            Add the Convex production build step on Vercel and redeploy.
+            Set the public Convex URL in your Next.js environment and redeploy.
           </p>
         </div>
       </div>

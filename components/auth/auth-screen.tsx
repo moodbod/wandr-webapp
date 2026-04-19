@@ -9,6 +9,23 @@ import { startTransition, useState } from "react";
 
 type AuthMode = "sign-in" | "sign-up";
 
+function getAuthErrorMessage(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : "Something went wrong while authenticating.";
+
+  if (
+    /Missing environment variable `(?:JWT_PRIVATE_KEY|JWKS|SITE_URL)`/.test(
+      message,
+    )
+  ) {
+    return "Authentication is temporarily unavailable. Please try again shortly.";
+  }
+
+  return message;
+}
+
 export function AuthScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,11 +66,7 @@ export function AuthScreen() {
         router.refresh();
       });
     } catch (submitError) {
-      const message =
-        submitError instanceof Error
-          ? submitError.message
-          : "Something went wrong while authenticating.";
-      setError(message);
+      setError(getAuthErrorMessage(submitError));
     } finally {
       setIsSubmitting(false);
     }
