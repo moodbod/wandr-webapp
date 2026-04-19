@@ -20,6 +20,8 @@ export function ExploreTripTimeline({
   );
   const removeStop = useMutation(api.tripStops.removeStop);
   const [removingStopId, setRemovingStopId] = useState<Id<"tripStops"> | null>(null);
+  const tripStatus = tripWorkspace?.trip?.status ?? null;
+  const isTripActive = tripStatus === "active";
   const stops = tripWorkspace?.stops ?? [];
 
   if (!isAuthenticated || stops.length === 0) {
@@ -28,10 +30,6 @@ export function ExploreTripTimeline({
 
   const firstStop = stops[0];
   const lastStop = stops[stops.length - 1];
-  const helperCopy =
-    stops.length === 1
-      ? `Start with ${firstStop.place.title}. Add one more place and the road route will connect automatically.`
-      : `${firstStop.place.title} to ${lastStop.place.title}. Tap any stop to focus it on the map.`;
 
   async function handleRemoveStop(
     stopId: Id<"tripStops">,
@@ -57,52 +55,81 @@ export function ExploreTripTimeline({
     }
   }
 
+  // ── Ultra Clean Active State ── //
+  if (isTripActive) {
+    return (
+      <div className="pointer-events-auto mt-auto pb-[5.7rem] lg:pb-6 flex justify-center">
+        <Link 
+          href="/trips"
+          className="flex items-center gap-3.5 rounded-[1.25rem] bg-[#17181a] p-2 pr-4 shadow-[0_16px_32px_rgba(0,0,0,0.25)] hover:scale-[1.02] active:scale-[0.98] transition-transform"
+        >
+          <div className="flex h-[2.6rem] w-[2.6rem] items-center justify-center rounded-[0.85rem] bg-[#2a2b2d] text-[#9fe870]">
+            <Route className="size-[1.1rem]" strokeWidth={2.4} />
+          </div>
+          <div className="flex flex-col pr-1">
+            <div className="flex items-center gap-1.5">
+              <span className="trip-uber-status-dot" style={{ width: '6px', height:'6px' }} />
+              <span className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[#9fe870]">
+                Live Route
+              </span>
+            </div>
+            <span className="text-[0.88rem] font-bold text-white tracking-tight mt-[0.1rem]">
+              {tripWorkspace?.trip?.title || "Active Trip"}
+            </span>
+          </div>
+          <ArrowRight className="ml-1 size-4 text-[#8a8f87]" />
+        </Link>
+      </div>
+    );
+  }
+
+  // ── Clean Drafting State ── //
   return (
     <div className="pointer-events-auto mt-auto pb-[5.7rem] lg:pb-0">
-      <section className="explore-trip-timeline surface-card-strong mx-auto max-w-[62rem] rounded-[1.75rem] p-3 sm:p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <section className="mx-auto w-full max-w-[62rem] rounded-[2rem] bg-white/95 backdrop-blur-xl border border-white p-4 shadow-[0_24px_50px_rgba(0,0,0,0.08)]">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between px-2 pt-1 pb-2">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="eyebrow">Trip In Progress</span>
-              <span className="rounded-full bg-[#eef6e7] px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[#315117]">
+            <div className="flex items-center gap-2">
+              <span className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[#7a8374]">
+                Drafting
+              </span>
+              <span className="bg-[#f4f5f0] text-[#17181a] text-[0.68rem] font-bold px-2 py-0.5 rounded-md">
                 {stops.length} {stops.length === 1 ? "stop" : "stops"}
               </span>
             </div>
-
-            <p className="mt-1 text-sm font-semibold text-[#17181a]">
-              Your route is building live on the map.
-            </p>
-            <p className="mt-1 text-xs leading-5 text-[#656d62]">{helperCopy}</p>
+            <h2 className="mt-1.5 text-[1.15rem] font-bold tracking-tight text-[#17181a] truncate">
+              {stops.length > 1 ? `${firstStop.place.title} to ${lastStop.place.title}` : `Starting at ${firstStop.place.title}`}
+            </h2>
           </div>
 
           <Link
             href="/trips"
-            className="pill-button inline-flex items-center justify-center gap-2 rounded-full bg-[#17181a] px-4 py-2.5 text-sm font-bold text-white"
+            className="trip-uber-btn-sm trip-uber-btn-sm--dark !px-5 !py-3 !text-[0.82rem] lg:w-auto w-full justify-center"
           >
-            <Route className="size-4" />
-            Open My Trip
-            <ArrowRight className="size-4" />
+            <Route className="size-[1.1rem]" strokeWidth={2.4} />
+            My Trip
           </Link>
         </div>
 
-        <div className="explore-trip-timeline-scroll mt-3 overflow-x-auto pb-1">
-          <div className="flex min-w-max items-center gap-2.5 sm:gap-3">
+        <div className="explore-trip-timeline-scroll mt-2 overflow-x-auto pb-1">
+          <div className="flex min-w-max items-center gap-2 sm:gap-3 px-1">
             {stops.map((stop, index) => {
               const isSelected = selectedPlaceSlug === stop.place.slug;
               const isRemoving = removingStopId === stop._id;
-              const fallbackSlug =
-                stops[index + 1]?.place.slug ?? stops[index - 1]?.place.slug ?? null;
+              const fallbackSlug = stops[index + 1]?.place.slug ?? stops[index - 1]?.place.slug ?? null;
 
               return (
-                <div key={stop._id} className="flex items-center gap-2.5 sm:gap-3">
+                <div key={stop._id} className="flex items-center gap-2 sm:gap-3">
                   {index > 0 ? (
-                    <div aria-hidden="true" className="explore-trip-connector w-7 sm:w-9">
-                      <span className="block h-px w-full rounded-full bg-gradient-to-r from-[#ccd6c0] via-[#dae2d0] to-[#edf1e7]" />
+                    <div aria-hidden="true" className="w-5 sm:w-7">
+                      <span className="block h-[2px] w-full rounded-full bg-[#e5e8e2]" />
                     </div>
                   ) : null}
 
                   <article
-                    className={`explore-trip-stop-card ${isSelected ? "is-active" : ""} ${isRemoving ? "opacity-70" : ""}`}
+                    className={`flex items-center rounded-2xl border bg-white p-1.5 shadow-sm transition-colors ${
+                      isSelected ? "border-[#17181a] shadow-[0_4px_12px_rgba(0,0,0,0.06)]" : "border-[#e5e8e2]"
+                    } ${isRemoving ? "opacity-50" : ""}`}
                   >
                     <button
                       type="button"
@@ -111,34 +138,33 @@ export function ExploreTripTimeline({
                           setSelectedPlaceSlug(stop.place.slug);
                         });
                       }}
-                      className="flex min-w-0 flex-1 items-center gap-3 px-3.5 py-3 text-left"
+                      className="flex min-w-[11rem] max-w-[14rem] items-center gap-2.5 px-2 py-1.5 text-left"
                     >
                       <span
-                        className={`explore-trip-stop-number ${isSelected ? "is-active" : ""}`}
+                        className={`flex h-[1.6rem] w-[1.6rem] shrink-0 items-center justify-center rounded-full text-[0.7rem] font-bold ${
+                          isSelected ? "bg-[#17181a] text-[#9fe870]" : "bg-[#f4f5f0] text-[#17181a]"
+                        }`}
                       >
                         {index + 1}
                       </span>
-
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-bold tracking-[-0.02em] text-[#17181a]">
+                        <span className="block truncate text-[0.82rem] font-bold tracking-tight text-[#17181a]">
                           {stop.place.title}
                         </span>
-                        <span className="mt-1 block truncate text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-[#737a70]">
-                          {stop.place.region} • {stop.place.category}
+                        <span className="mt-[0.1rem] block truncate text-[0.65rem] font-bold uppercase tracking-[0.1em] text-[#7a8374]">
+                          {stop.place.region}
                         </span>
                       </span>
                     </button>
 
                     <button
                       type="button"
-                      onClick={() =>
-                        void handleRemoveStop(stop._id, stop.place.slug, fallbackSlug)
-                      }
+                      onClick={() => void handleRemoveStop(stop._id, stop.place.slug, fallbackSlug)}
                       disabled={isRemoving}
-                      className="mr-2 flex size-8 shrink-0 items-center justify-center rounded-full bg-[#f4f5f0] text-[#61695c] transition-colors hover:bg-[#eaede4] hover:text-[#17181a] disabled:cursor-not-allowed disabled:opacity-60"
-                      aria-label={`Remove ${stop.place.title} from this trip`}
+                      className="mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-white text-[#9a9f97] transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                      aria-label={`Remove ${stop.place.title}`}
                     >
-                      <X className="size-3.5" />
+                      <X className="size-3.5" strokeWidth={2.5} />
                     </button>
                   </article>
                 </div>

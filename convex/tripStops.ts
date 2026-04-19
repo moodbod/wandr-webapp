@@ -4,13 +4,25 @@ import {
   createDraftTripForViewer,
   ensureNamibiaPlaces,
   ensureViewerPreferences,
-  getViewerCurrentTrip,
   getTripByIdForViewer,
   getTripStops,
+  getViewerCurrentTrip,
   requireViewerId,
 } from "./planner";
 import { DEFAULT_TRIP_TITLE } from "../lib/namibia-data";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
+
+function assertTripAllowsPlanningEdits(trip: Doc<"trips">) {
+  if (trip.status === "active") {
+    throw new Error(
+      "This trip is already active. End it before changing stops or schedule details.",
+    );
+  }
+
+  if (trip.status === "completed") {
+    throw new Error("Completed trips can no longer be edited.");
+  }
+}
 
 async function getOrCreateActiveTripId(
   ctx: MutationCtx,
@@ -19,11 +31,13 @@ async function getOrCreateActiveTripId(
 ) {
   if (requestedTripId) {
     const trip = await getTripByIdForViewer(ctx, requestedTripId, userId);
+    assertTripAllowsPlanningEdits(trip);
     return trip._id;
   }
 
   const currentTrip = await getViewerCurrentTrip(ctx, userId);
   if (currentTrip) {
+    assertTripAllowsPlanningEdits(currentTrip);
     return currentTrip._id;
   }
 
@@ -117,7 +131,8 @@ export const removeStop = mutation({
       throw new Error("Stop not found.");
     }
 
-    await getTripByIdForViewer(ctx, stop.tripId, userId);
+    const trip = await getTripByIdForViewer(ctx, stop.tripId, userId);
+    assertTripAllowsPlanningEdits(trip);
     await ctx.db.delete(stop._id);
 
     const remainingStops = await getTripStops(ctx, stop.tripId);
@@ -146,7 +161,8 @@ export const reorderStops = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await requireViewerId(ctx);
-    await getTripByIdForViewer(ctx, args.tripId, userId);
+    const trip = await getTripByIdForViewer(ctx, args.tripId, userId);
+    assertTripAllowsPlanningEdits(trip);
 
     const stops = await getTripStops(ctx, args.tripId);
     const currentIndex = stops.findIndex((stop) => stop._id === args.stopId);
@@ -194,7 +210,20 @@ export const updateStopMeta = mutation({
       throw new Error("Stop not found.");
     }
 
-    await getTripByIdForViewer(ctx, stop.tripId, userId);
+    const trip = await getTripByIdForViewer(ctx, stop.tripId, userId);
+    if (trip.status === "completed") {
+      throw new Error("Completed trips can no longer be edited.");
+    }
+
+    if (
+      trip.status === "active" &&
+      (args.dayNumber !== undefined ||
+        args.plannedArrivalTime !== undefined ||
+        args.plannedDepartureTime !== undefined)
+    ) {
+      throw new Error("Active trips only allow stop notes to be edited.");
+    }
+
     const now = Date.now();
 
     await ctx.db.patch(stop._id, {

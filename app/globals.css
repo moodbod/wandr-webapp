@@ -216,13 +216,13 @@ textarea {
     0 0 0 1px rgba(22, 51, 0, 0.08);
   cursor: pointer;
   transition:
-    transform 160ms ease,
+    scale 160ms ease,
     box-shadow 160ms ease,
     background-color 160ms ease;
 }
 
 .wandr-map-marker:hover {
-  transform: scale(1.08);
+  scale: 1.08;
 }
 
 .wandr-map-marker.is-emphasis {
@@ -230,7 +230,7 @@ textarea {
 }
 
 .wandr-map-marker.is-selected {
-  transform: scale(1.12);
+  scale: 1.12;
   box-shadow:
     0 16px 28px rgba(35, 42, 31, 0.22),
     0 0 0 4px rgba(159, 232, 112, 0.32);
@@ -402,5 +402,930 @@ textarea {
 
   .explore-trip-stop-card {
     min-width: 12.5rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   Trip Page — Uber-style ride experience
+   ═══════════════════════════════════════════════════ */
+
+.trip-uber-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  pointer-events: none;
+}
+
+.trip-uber-map {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: auto;
+}
+
+/* ── Loading state ── */
+
+.trip-uber-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  pointer-events: none;
+}
+
+.trip-uber-loading-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  border: 3px solid rgba(23, 24, 26, 0.08);
+  border-top-color: #17181a;
+  animation: trip-spin 0.7s linear infinite;
+}
+
+.trip-uber-loading-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #58604f;
+  letter-spacing: -0.01em;
+}
+
+@keyframes trip-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Floating status pill ── */
+
+.trip-uber-status-pill {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1rem;
+  border-radius: 9999px;
+  background: rgba(23, 24, 26, 0.92);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(20px);
+  white-space: nowrap;
+  animation: trip-pill-enter 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes trip-pill-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.trip-uber-status-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 9999px;
+  background: #9fe870;
+  box-shadow: 0 0 6px rgba(159, 232, 112, 0.6);
+  animation: trip-pulse 2s ease-in-out infinite;
+}
+
+@keyframes trip-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.trip-uber-status-divider {
+  width: 1px;
+  height: 0.8rem;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.trip-uber-status-live {
+  color: #9fe870;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+}
+
+.trip-uber-status-badge-draft {
+  display: inline-flex;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  background: rgba(159, 232, 112, 0.2);
+  color: #9fe870;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.trip-uber-status-trip-name {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.trip-uber-status-date {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+}
+
+/* ── Bottom sheet ── */
+
+.trip-uber-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  pointer-events: auto;
+  background: white;
+  border-radius: 1.6rem 1.6rem 0 0;
+  padding: 1.25rem 1.25rem calc(5rem + var(--safe-area-bottom));
+  box-shadow:
+    0 -8px 40px rgba(0, 0, 0, 0.1),
+    0 -1px 0 rgba(0, 0, 0, 0.04);
+  animation: trip-sheet-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes trip-sheet-enter {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.trip-uber-sheet--centered {
+  position: fixed;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 2rem;
+  max-width: 22rem;
+  width: calc(100% - 2rem);
+  padding: 2.5rem 2rem;
+  text-align: center;
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.16);
+  animation: trip-center-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes trip-center-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.trip-uber-sheet--ride {
+  max-height: 55vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.trip-uber-sheet--ride::-webkit-scrollbar {
+  display: none;
+}
+
+.trip-uber-sheet--itinerary {
+  max-height: 52vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Sheet handle */
+.trip-uber-sheet-handle {
+  width: 2.5rem;
+  height: 0.25rem;
+  border-radius: 9999px;
+  background: #d8ddd2;
+  margin: 0 auto 1rem;
+}
+
+/* Sheet typography */
+.trip-uber-sheet-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #17181a;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+}
+
+.trip-uber-sheet-meta {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #7a8374;
+}
+
+.trip-uber-sheet-caption {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #697164;
+}
+
+/* ── Empty state ── */
+
+.trip-uber-empty-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  background: #17181a;
+  margin: 0 auto 1.25rem;
+  box-shadow: 0 8px 20px rgba(23, 24, 26, 0.2);
+}
+
+.trip-uber-empty-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #17181a;
+  letter-spacing: -0.04em;
+}
+
+.trip-uber-empty-desc {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: #7a8374;
+}
+
+/* ── Completed badge ── */
+
+.trip-uber-completed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  background: #17181a;
+  color: #9fe870;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 1rem;
+}
+
+/* ── Minimal Active Trip Header ── */
+
+.trip-uber-status-badge-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  background: rgba(159, 232, 112, 0.2);
+  color: #9fe870;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ── Active Ride Progress ── */
+
+.trip-uber-ride-progress-container {
+  margin-bottom: 1.25rem;
+}
+
+.trip-uber-ride-segments {
+  display: flex;
+  gap: 0.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.trip-uber-ride-segment {
+  flex: 1;
+  height: 0.35rem;
+  border-radius: 9999px;
+  background: #eef0ea;
+  transition: all 0.3s ease;
+}
+
+.trip-uber-ride-segment.is-completed {
+  background: #9a9f97;
+}
+
+.trip-uber-ride-segment.is-current {
+  background: #17181a;
+  transform: scaleY(1.2);
+}
+
+.trip-uber-ride-eta {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #7a8374;
+  letter-spacing: 0.02em;
+}
+
+/* ── Active Ride Hero ── */
+
+.trip-uber-ride-hero {
+  margin-bottom: 1.25rem;
+}
+
+.trip-uber-ride-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #17181a;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+}
+
+.trip-uber-ride-subtitle {
+  margin-top: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #7a8374;
+}
+
+/* ── Ultra Minimal Stats ── */
+
+.trip-uber-ride-stats {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-top: 1px solid #eef0ea;
+  margin-bottom: 1rem;
+}
+
+.trip-uber-ride-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.trip-uber-ride-stat-val {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #17181a;
+  letter-spacing: -0.02em;
+}
+
+.trip-uber-ride-stat-lbl {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #9a9f97;
+  letter-spacing: 0.06em;
+}
+
+/* ── Note toggle ── */
+
+.trip-uber-note-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #4a5248;
+  border-top: 1px solid #eef0ea;
+}
+
+/* ── Note textarea ── */
+
+.trip-uber-note-input {
+  width: 100%;
+  resize: none;
+  border-radius: 0.85rem;
+  border: 1px solid #e5e8e2;
+  background: #f9faf7;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #17181a;
+  outline: none;
+  margin-bottom: 0.75rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.trip-uber-note-input::placeholder {
+  color: #aab4a5;
+}
+
+.trip-uber-note-input:focus {
+  border-color: rgba(23, 24, 26, 0.2);
+  background: white;
+}
+
+/* ── Stop chips (active trip) ── */
+
+.trip-uber-stops-row {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  scrollbar-width: none;
+}
+
+.trip-uber-stops-row::-webkit-scrollbar {
+  display: none;
+}
+
+.trip-uber-stop-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 9999px;
+  border: 1px solid #e5e8e2;
+  background: white;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+}
+
+.trip-uber-stop-chip:hover {
+  border-color: #c0c6ba;
+  background: #f7f8f5;
+}
+
+.trip-uber-stop-chip.is-active {
+  background: #17181a;
+  border-color: #17181a;
+  color: white;
+  box-shadow: 0 4px 14px rgba(23, 24, 26, 0.2);
+}
+
+.trip-uber-stop-chip-num {
+  display: inline-flex;
+  width: 1.35rem;
+  height: 1.35rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  background: #eef0ea;
+  color: #4a5248;
+  transition: all 0.18s ease;
+}
+
+.trip-uber-stop-chip-num.is-active {
+  background: #9fe870;
+  color: #163300;
+}
+
+.trip-uber-stop-chip-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ── Buttons ── */
+
+.trip-uber-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1.5rem;
+  border-radius: 0.85rem;
+  border: none;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  transition: transform 0.16s ease, opacity 0.16s ease;
+  text-decoration: none;
+}
+
+.trip-uber-btn:active {
+  transform: scale(0.97);
+}
+
+.trip-uber-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.trip-uber-btn--primary {
+  background: #17181a;
+  color: white;
+  box-shadow: 0 8px 20px rgba(23, 24, 26, 0.2);
+  margin-top: 1.5rem;
+  width: 100%;
+}
+
+.trip-uber-btn--accent {
+  background: #9fe870;
+  color: #163300;
+  box-shadow: 0 6px 16px rgba(159, 232, 112, 0.25);
+}
+
+.trip-uber-btn--dark {
+  background: #17181a;
+  color: white;
+  box-shadow: 0 6px 16px rgba(23, 24, 26, 0.18);
+}
+
+.trip-uber-btn--ghost {
+  background: #f2f3ef;
+  color: #17181a;
+}
+
+.trip-uber-btn--full {
+  width: 100%;
+}
+
+.trip-uber-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+}
+
+.trip-uber-actions > * {
+  flex: 1;
+}
+
+/* Small buttons */
+
+.trip-uber-btn-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 800;
+  transition: transform 0.14s ease;
+  text-decoration: none;
+}
+
+.trip-uber-btn-sm:active {
+  transform: scale(0.96);
+}
+
+.trip-uber-btn-sm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.trip-uber-btn-sm--dark {
+  background: #17181a;
+  color: white;
+  box-shadow: 0 4px 10px rgba(23, 24, 26, 0.14);
+}
+
+.trip-uber-btn-sm--accent {
+  background: #9fe870;
+  color: #163300;
+  box-shadow: 0 4px 10px rgba(159, 232, 112, 0.22);
+}
+
+/* ── Itinerary section ── */
+
+.trip-uber-itin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid #eef0ea;
+  margin-bottom: 0.5rem;
+  flex-shrink: 0;
+}
+
+.trip-uber-itin-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #17181a;
+  letter-spacing: -0.03em;
+}
+
+.trip-uber-itin-count {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #9a9f97;
+  margin-top: 0.1rem;
+}
+
+.trip-uber-itin-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.trip-uber-itin-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.trip-uber-itin-list::-webkit-scrollbar {
+  display: none;
+}
+
+.trip-uber-itin-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.5rem 1rem;
+}
+
+.trip-uber-itin-empty-title {
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #17181a;
+}
+
+.trip-uber-itin-empty-desc {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: #7a8374;
+  line-height: 1.5;
+}
+
+/* ── Stop list ── */
+
+.trip-uber-stop-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0 0;
+}
+
+.trip-uber-stop-row {
+  display: flex;
+  gap: 0.85rem;
+  position: relative;
+}
+
+.trip-uber-stop-timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 1.6rem;
+  flex-shrink: 0;
+  padding-top: 0.15rem;
+}
+
+.trip-uber-stop-num {
+  display: flex;
+  width: 1.6rem;
+  height: 1.6rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #17181a;
+  color: #9fe870;
+  font-size: 0.7rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  z-index: 1;
+  box-shadow: 0 4px 10px rgba(23, 24, 26, 0.16);
+}
+
+.trip-uber-stop-connector {
+  width: 2px;
+  flex: 1;
+  min-height: 1.5rem;
+  background: linear-gradient(180deg, #17181a 0%, #d8ddd2 100%);
+  border-radius: 1px;
+  margin: 0.25rem 0;
+}
+
+.trip-uber-stop-content {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 1rem;
+}
+
+.trip-uber-stop-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.trip-uber-stop-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.trip-uber-stop-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #17181a;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trip-uber-stop-subtitle {
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #7a8374;
+}
+
+/* Stop detail (expanded) */
+
+.trip-uber-stop-detail {
+  padding-top: 0.5rem;
+  animation: trip-detail-enter 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes trip-detail-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.trip-uber-stop-summary {
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #58604f;
+  margin-bottom: 0.75rem;
+}
+
+.trip-uber-stop-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.trip-uber-tag {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  background: #f2f3ef;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #58604f;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.trip-uber-day-select {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  border-radius: 0.7rem;
+  border: 1px solid #e5e8e2;
+  background: white;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #17181a;
+  outline: none;
+  margin-bottom: 0.6rem;
+  cursor: pointer;
+}
+
+.trip-uber-stop-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.trip-uber-move-group {
+  display: flex;
+  border-radius: 0.6rem;
+  border: 1px solid #e5e8e2;
+  overflow: hidden;
+}
+
+.trip-uber-move-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.65rem;
+  border: none;
+  background: white;
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #58604f;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: background 0.12s ease;
+}
+
+.trip-uber-move-btn:hover:not(:disabled) {
+  background: #f2f3ef;
+}
+
+.trip-uber-move-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.trip-uber-move-btn + .trip-uber-move-btn {
+  border-left: 1px solid #e5e8e2;
+}
+
+.trip-uber-remove-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(220, 38, 38, 0.15);
+  background: rgba(254, 242, 242, 0.8);
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #dc2626;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: background 0.12s ease;
+}
+
+.trip-uber-remove-btn:hover {
+  background: rgba(254, 226, 226, 0.9);
+}
+
+/* ── Desktop overrides ── */
+
+@media (min-width: 1024px) {
+  .trip-uber-sheet {
+    left: auto;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    top: auto;
+    width: 420px;
+    border-radius: 1.6rem;
+    padding: 1.5rem;
+    max-height: calc(100vh - 6rem);
+    box-shadow: 0 24px 56px rgba(0, 0, 0, 0.14);
+  }
+
+  .trip-uber-sheet--centered {
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 22rem;
+  }
+
+  .trip-uber-sheet--ride {
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+  }
+
+  .trip-uber-sheet--itinerary {
+    max-height: calc(100vh - 6rem);
+  }
+
+  .trip-uber-sheet-handle {
+    display: none;
+  }
+
+  .trip-uber-status-pill {
+    top: 1.5rem;
   }
 }

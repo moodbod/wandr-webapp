@@ -256,25 +256,35 @@ function buildTripStopGeoJson(
 function getButtonState({
   isAdding,
   isAlreadyInTrip,
+  isTripActive,
   wasJustAdded,
 }: {
   isAdding: boolean;
   isAlreadyInTrip: boolean;
+  isTripActive: boolean;
   wasJustAdded: boolean;
 }) {
   if (isAdding) {
-    return { disabled: true, label: "Adding…" };
+    return { disabled: true, hint: null, label: "Adding…" };
   }
 
   if (wasJustAdded) {
-    return { disabled: true, label: "Added" };
+    return { disabled: true, hint: null, label: "Added" };
+  }
+
+  if (isTripActive) {
+    return {
+      disabled: true,
+      hint: "This trip is active now. Open My Trip to add notes or end it before planning more stops.",
+      label: "Trip is active",
+    };
   }
 
   if (isAlreadyInTrip) {
-    return { disabled: true, label: "Already in trip" };
+    return { disabled: true, hint: null, label: "Already in trip" };
   }
 
-  return { disabled: false, label: "Add to trip" };
+  return { disabled: false, hint: null, label: "Add to trip" };
 }
 
 function disposePopupRoot(root: Root | null, container: HTMLDivElement | null) {
@@ -330,6 +340,7 @@ export function ExploreMapboxCanvas({
   const intentPlaceSlug = searchParams.get("place");
   const places = useMemo(() => explorePois ?? [], [explorePois]);
   const tripStops = useMemo(() => tripWorkspace?.stops ?? [], [tripWorkspace]);
+  const currentTripIsActive = tripWorkspace?.trip?.status === "active";
   const visiblePlaceMap = useMemo(
     () => new Map(places.map((place) => [place.slug, place] as const)),
     [places],
@@ -404,7 +415,7 @@ export function ExploreMapboxCanvas({
       return;
     }
 
-    if (addingSlug === placeSlug) {
+    if (currentTripIsActive || addingSlug === placeSlug) {
       return;
     }
 
@@ -575,6 +586,10 @@ export function ExploreMapboxCanvas({
       return;
     }
 
+    if (tripWorkspace === undefined) {
+      return;
+    }
+
     const targetSlug = intentPlaceSlug;
     const intentKey = `${intent}:${targetSlug}`;
     if (processedIntentRef.current === intentKey) {
@@ -582,6 +597,12 @@ export function ExploreMapboxCanvas({
     }
 
     processedIntentRef.current = intentKey;
+
+    if (currentTripIsActive) {
+      router.replace(pathname);
+      return;
+    }
+
     let isActive = true;
 
     async function consumeAddIntent() {
@@ -606,7 +627,16 @@ export function ExploreMapboxCanvas({
     return () => {
       isActive = false;
     };
-  }, [addStop, intent, intentPlaceSlug, isAuthenticated, pathname, router]);
+  }, [
+    addStop,
+    currentTripIsActive,
+    intent,
+    intentPlaceSlug,
+    isAuthenticated,
+    pathname,
+    router,
+    tripWorkspace,
+  ]);
 
   useEffect(() => {
     const map = sharedMapState.map;
@@ -983,12 +1013,14 @@ export function ExploreMapboxCanvas({
     const buttonState = getButtonState({
       isAdding: addingSlug === selectedPlace.slug,
       isAlreadyInTrip: tripPlaceSlugSet.has(selectedPlace.slug),
+      isTripActive: currentTripIsActive,
       wasJustAdded: recentlyAddedSlug === selectedPlace.slug,
     });
 
     popupRootRef.current?.render(
       <ExplorePoiPopup
         buttonDisabled={buttonState.disabled}
+        buttonHint={buttonState.hint}
         buttonLabel={buttonState.label}
         isAuthenticated={isAuthenticated}
         onAddToTrip={handleAddToTrip}
@@ -1003,6 +1035,7 @@ export function ExploreMapboxCanvas({
       .addTo(map);
   }, [
     addingSlug,
+    currentTripIsActive,
     isAuthenticated,
     isMapReady,
     recentlyAddedSlug,
@@ -1040,6 +1073,7 @@ export function ExploreMapboxCanvas({
 
 function ExplorePoiPopup({
   buttonDisabled,
+  buttonHint,
   buttonLabel,
   isAuthenticated,
   onAddToTrip,
@@ -1048,6 +1082,7 @@ function ExplorePoiPopup({
   tripStopNumber,
 }: {
   buttonDisabled: boolean;
+  buttonHint: string | null;
   buttonLabel: string;
   isAuthenticated: boolean;
   onAddToTrip: (placeSlug: string) => void;
@@ -1127,6 +1162,10 @@ function ExplorePoiPopup({
       >
         {buttonLabel}
       </button>
+
+      {buttonHint ? (
+        <p className="mt-2 text-xs leading-5 text-[#66705f]">{buttonHint}</p>
+      ) : null}
     </div>
   );
 }

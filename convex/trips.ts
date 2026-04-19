@@ -4,6 +4,7 @@ import {
   createDraftTripForViewer,
   ensureViewerPreferences,
   getTripDayCount,
+  getTripByIdForViewer,
   getTripStops,
   getViewerTrips,
   type PlannerCtx,
@@ -37,16 +38,80 @@ function summarizeTrip(trip: Doc<"trips">, stopCount: number, dayCount: number) 
   };
 }
 
-async function buildTripSummaries(
-  ctx: PlannerCtx,
-  trips: Doc<"trips">[],
-) {
+type TripSummary = ReturnType<typeof summarizeTrip>;
+
+type TripWorkspaceStop = {
+  _id: Id<"tripStops">;
+  tripId: Id<"trips">;
+  placeId: Id<"places">;
+  orderIndex: number;
+  dayNumber: number | null;
+  note: string | null;
+  plannedArrivalTime: string | null;
+  plannedDepartureTime: string | null;
+  place: Doc<"places">;
+};
+
+type TripWorkspaceState = {
+  activeTripId: Id<"trips"> | null;
+  trip: TripSummary | null;
+  routeCoordinates: [number, number][];
+  stops: TripWorkspaceStop[];
+};
+
+async function buildTripSummaries(ctx: PlannerCtx, trips: Doc<"trips">[]) {
   return await Promise.all(
     trips.map(async (trip) => {
       const stops = await getTripStops(ctx, trip._id);
       return summarizeTrip(trip, stops.length, getTripDayCount(stops));
     }),
   );
+}
+
+async function buildTripWorkspace(
+  ctx: PlannerCtx,
+  trip: Doc<"trips"> | null,
+): Promise<TripWorkspaceState> {
+  if (!trip) {
+    return {
+      activeTripId: null,
+      trip: null,
+      routeCoordinates: [],
+      stops: [],
+    };
+  }
+
+  const stops = await getTripStops(ctx, trip._id);
+  const stopsWithPlaces = await Promise.all(
+    stops.map(async (stop) => {
+      const place = await ctx.db.get(stop.placeId);
+      if (!place) {
+        throw new Error("Trip stop place is missing.");
+      }
+
+      return {
+        _id: stop._id,
+        tripId: stop.tripId,
+        placeId: stop.placeId,
+        orderIndex: stop.orderIndex,
+        dayNumber: stop.dayNumber,
+        note: stop.note,
+        plannedArrivalTime: stop.plannedArrivalTime,
+        plannedDepartureTime: stop.plannedDepartureTime,
+        place,
+      };
+    }),
+  );
+
+  return {
+    activeTripId: trip._id,
+    trip: summarizeTrip(trip, stops.length, getTripDayCount(stops)),
+    routeCoordinates: stopsWithPlaces.map((stop) => [
+      stop.place.coordinates[0] ?? 0,
+      stop.place.coordinates[1] ?? 0,
+    ]) as [number, number][],
+    stops: stopsWithPlaces,
+  };
 }
 
 export const listViewerTrips = query({
@@ -88,9 +153,9 @@ export const setActiveTrip = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await requireViewerId(ctx);
-    const trip = await resolveEffectiveTrip(ctx, userId, args.tripId);
-    if (!trip) {
-      throw new Error("Trip not found.");
+    const trip = await getTripByIdForViewer(ctx, args.tripId, userId);
+    if (trip.status === "completed") {
+      throw new Error("Completed trips cannot be set as the current trip.");
     }
 
     const preferences = await ensureViewerPreferences(ctx, userId);
@@ -103,6 +168,69 @@ export const setActiveTrip = mutation({
   },
 });
 
+export const startTrip = mutation({
+  args: {
+    tripId: v.id("trips"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await requireViewerId(ctx);
+    const trip = await getTripByIdForViewer(ctx, args.tripId, userId);
+
+    if (trip.status !== "draft") {
+      throw new Error("Only draft trips can be started.");
+    }
+
+    const stops = await getTripStops(ctx, trip._id);
+    if (stops.length === 0) {
+      throw new Error("Add at least one stop before starting this trip.");
+    }
+
+    const now = Date.now();
+    await ctx.db.patch(trip._id, {
+      status: "active",
+      updatedAt: now,
+    });
+
+    const preferences = await ensureViewerPreferences(ctx, userId);
+    await ctx.db.patch(preferences._id, {
+      activeTripId: trip._id,
+      updatedAt: now,
+    });
+
+    return { tripId: trip._id, status: "active" as const };
+  },
+});
+
+export const endTrip = mutation({
+  args: {
+    tripId: v.id("trips"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await requireViewerId(ctx);
+    const trip = await getTripByIdForViewer(ctx, args.tripId, userId);
+
+    if (trip.status !== "active") {
+      throw new Error("Only active trips can be ended.");
+    }
+
+    const now = Date.now();
+    await ctx.db.patch(trip._id, {
+      status: "completed",
+      updatedAt: now,
+    });
+
+    const preferences = await ensureViewerPreferences(ctx, userId);
+    if (preferences.activeTripId === trip._id) {
+      await ctx.db.patch(preferences._id, {
+        activeTripId: null,
+        updatedAt: now,
+      });
+    }
+
+    return { tripId: trip._id, status: "completed" as const };
+  },
+});
+
 export const getTripWorkspace = query({
   args: {
     tripId: v.optional(v.union(v.id("trips"), v.null())),
@@ -110,56 +238,41 @@ export const getTripWorkspace = query({
   handler: async (ctx, args) => {
     const userId = await requireViewerId(ctx);
     const trip = await resolveEffectiveTrip(ctx, userId, args.tripId ?? null);
+    return await buildTripWorkspace(ctx, trip);
+  },
+});
 
-    if (!trip) {
+export const getTripsPageState = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await requireViewerId(ctx);
+    const currentTrip = await resolveEffectiveTrip(ctx, userId);
+
+    if (currentTrip) {
       return {
-        activeTripId: null,
-        trip: null,
-        routeCoordinates: [] as [number, number][],
-        stops: [] as Array<{
-          _id: Id<"tripStops">;
-          tripId: Id<"trips">;
-          placeId: Id<"places">;
-          orderIndex: number;
-          dayNumber: number | null;
-          note: string | null;
-          plannedArrivalTime: string | null;
-          plannedDepartureTime: string | null;
-          place: Doc<"places">;
-        }>,
+        currentTrip: await buildTripWorkspace(ctx, currentTrip),
+        recentCompletedTrip: null,
       };
     }
 
-    const stops = await getTripStops(ctx, trip._id);
-    const stopsWithPlaces = await Promise.all(
-      stops.map(async (stop) => {
-        const place = await ctx.db.get(stop.placeId);
-        if (!place) {
-          throw new Error("Trip stop place is missing.");
-        }
+    const trips = await getViewerTrips(ctx, userId);
+    const recentCompleted = trips.find((trip) => trip.status === "completed");
 
-        return {
-          _id: stop._id,
-          tripId: stop.tripId,
-          placeId: stop.placeId,
-          orderIndex: stop.orderIndex,
-          dayNumber: stop.dayNumber,
-          note: stop.note,
-          plannedArrivalTime: stop.plannedArrivalTime,
-          plannedDepartureTime: stop.plannedDepartureTime,
-          place,
-        };
-      }),
-    );
+    if (!recentCompleted) {
+      return {
+        currentTrip: null,
+        recentCompletedTrip: null,
+      };
+    }
 
+    const stops = await getTripStops(ctx, recentCompleted._id);
     return {
-      activeTripId: trip._id,
-      trip: summarizeTrip(trip, stops.length, getTripDayCount(stops)),
-      routeCoordinates: stopsWithPlaces.map((stop) => [
-        stop.place.coordinates[0] ?? 0,
-        stop.place.coordinates[1] ?? 0,
-      ]) as [number, number][],
-      stops: stopsWithPlaces,
+      currentTrip: null,
+      recentCompletedTrip: summarizeTrip(
+        recentCompleted,
+        stops.length,
+        getTripDayCount(stops),
+      ),
     };
   },
 });

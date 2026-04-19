@@ -76,6 +76,8 @@ export function AppShell({
   const [isSigningOut, setIsSigningOut] = useState(false);
   const isAuthenticated = Boolean(viewer);
   const isExploreRoute = isActivePath(pathname, "/explore");
+  const isTripsRoute = isActivePath(pathname, "/trips");
+  const isFullScreenRoute = isExploreRoute || isTripsRoute;
   const shouldMountExploreMap = isExploreRoute || hasExploreMapSession();
   const plannerHref = isAuthenticated ? "/trips" : "/auth";
   const displayName = viewer?.name ?? "Traveler";
@@ -105,9 +107,9 @@ export function AppShell({
     <ExploreMapStateProvider>
       <main
         className={`relative ${
-          isExploreRoute
-            ? "h-screen overflow-hidden bg-transparent"
-            : "min-h-screen bg-[#f7f7f5]"
+          isFullScreenRoute
+            ? "h-[100dvh] overflow-hidden bg-transparent"
+            : "min-h-[100dvh] bg-[#f7f7f5]"
         }`}
       >
         {shouldMountExploreMap ? (
@@ -120,10 +122,10 @@ export function AppShell({
 
         <div
           className={`relative z-10 mx-auto grid max-w-[1600px] ${
-            isExploreRoute
+            isFullScreenRoute
               ? "h-full lg:grid-cols-[240px_minmax(0,1fr)]"
-              : "lg:min-h-screen lg:grid-cols-[240px_minmax(0,1fr)]"
-          } ${isExploreRoute ? "pointer-events-none" : ""}`}
+              : "lg:min-h-[100dvh] lg:grid-cols-[240px_minmax(0,1fr)]"
+          } ${isFullScreenRoute ? "pointer-events-none" : ""}`}
         >
           {/* ─── Desktop sidebar ─── */}
           <aside className="pointer-events-auto hidden lg:flex lg:flex-col border-r border-[#e8e8e6] bg-[#fafaf8] px-3 py-4">
@@ -211,13 +213,13 @@ export function AppShell({
           {/* ─── Main content ─── */}
           <div
             className={`min-w-0 ${
-              isExploreRoute
+              isFullScreenRoute
                 ? "h-full overflow-hidden lg:flex lg:flex-col"
                 : "px-4 py-4 pb-24 lg:px-6 lg:pb-6"
             }`}
           >
             {/* Mobile header — non-explore only */}
-            {!isExploreRoute ? (
+            {!isFullScreenRoute ? (
               <header className="mb-4 flex items-center justify-between lg:hidden">
                 <div>
                   <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[#9a9f97]">
