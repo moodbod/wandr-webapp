@@ -74,6 +74,7 @@ export const updateViewerPreferences = mutation({
         homeCountry: args.homeCountry,
         travelStyle: args.travelStyle,
         preferredActivities: args.preferredActivities,
+        activeTripId: null,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });

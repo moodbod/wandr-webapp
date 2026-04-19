@@ -1,5 +1,5 @@
 export function buildAddToTripIntent(slug: string) {
-  return `/trips?intent=add-stop&place=${encodeURIComponent(slug)}`;
+  return `/explore?intent=add-stop&place=${encodeURIComponent(slug)}`;
 }
 
 export function buildAuthRedirectPath(path: string) {

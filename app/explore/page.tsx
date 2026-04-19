@@ -12,7 +12,7 @@ export default async function ExplorePage() {
 
   return (
     <AppShell viewer={viewer}>
-      <ExploreDiscovery />
+      <ExploreDiscovery isAuthenticated={authenticated} />
     </AppShell>
   );
 }

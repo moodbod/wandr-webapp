@@ -11,6 +11,28 @@ export const PLACE_CATEGORIES = [
 ] as const;
 
 export const EXPLORE_FILTERS = ["All", ...PLACE_CATEGORIES] as const;
+export const EXPLORE_DISCOVERY_FILTERS = [
+  "Experiences",
+  "Dining",
+  "Stays",
+] as const;
+export const EXPLORE_MAP_PLACE_SLUGS = [
+  "sossusvlei-deadvlei",
+  "etosha-national-park",
+  "swakopmund",
+  "sandwich-harbour",
+  "skeleton-coast-national-park",
+  "spitzkoppe",
+  "twyfelfontein",
+  "fish-river-canyon",
+  "waterberg-plateau",
+  "kolmanskop-and-luderitz",
+] as const;
+export const EXPLORE_DISCOVERY_FILTER_POI_SLUGS = {
+  Experiences: [...EXPLORE_MAP_PLACE_SLUGS],
+  Dining: ["swakopmund", "kolmanskop-and-luderitz"],
+  Stays: ["spitzkoppe", "swakopmund", "waterberg-plateau"],
+} as const;
 
 export const TRIP_STATUSES = [
   "draft",
@@ -21,6 +43,7 @@ export const TRIP_STATUSES = [
 
 export type PlaceCategory = (typeof PLACE_CATEGORIES)[number];
 export type ExploreFilter = (typeof EXPLORE_FILTERS)[number];
+export type ExploreDiscoveryFilter = (typeof EXPLORE_DISCOVERY_FILTERS)[number];
 export type TripStatus = (typeof TRIP_STATUSES)[number];
 
 export type NamibiaPlaceSeed = {

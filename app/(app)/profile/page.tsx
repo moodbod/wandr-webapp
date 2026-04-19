@@ -60,12 +60,13 @@ export default function ProfilePage() {
     return null; // Not authenticated
   }
 
-  const activities = viewer.preferredActivities.length
-    ? viewer.preferredActivities
+  const profile = viewer;
+  const activities = profile.preferredActivities.length
+    ? profile.preferredActivities
     : ["Wildlife", "Road trips", "Photography"];
 
   const initials =
-    viewer.name
+    profile.name
       .split(" ")
       .map((p) => p[0])
       .join("")
@@ -73,8 +74,8 @@ export default function ProfilePage() {
       .toUpperCase() || "T";
 
   function handleEdit() {
-    setDraftHomeCountry(viewer.homeCountry);
-    setDraftTravelStyle(viewer.travelStyle);
+    setDraftHomeCountry(profile.homeCountry);
+    setDraftTravelStyle(profile.travelStyle);
     setDraftActivities(activities);
     setIsEditing(true);
   }
@@ -115,11 +116,11 @@ export default function ProfilePage() {
           </div>
           <div className="min-w-0">
             <h1 className="text-xl font-bold tracking-tight text-[#17181a]">
-              {viewer.name}
+              {profile.name}
             </h1>
             <p className="mt-0.5 flex items-center gap-1.5 text-sm text-[#71776e]">
               <Mail className="size-3.5" />
-              {viewer.email}
+              {profile.email}
             </p>
           </div>
         </div>
@@ -193,7 +194,7 @@ export default function ProfilePage() {
               </select>
             ) : (
               <p className="text-sm font-medium text-[#3a3f38]">
-                {viewer.travelStyle ?? "Not set"}
+                {profile.travelStyle ?? "Not set"}
               </p>
             )}
           </div>
@@ -209,7 +210,7 @@ export default function ProfilePage() {
               <p className="text-sm font-semibold text-[#17181a]">
                 Home country
               </p>
-              <p className="text-xs text-[#9a9f97]">Where you're from</p>
+              <p className="text-xs text-[#9a9f97]">Where you&apos;re from</p>
             </div>
           </div>
           <div className="mt-4 sm:mt-0">
@@ -223,7 +224,7 @@ export default function ProfilePage() {
               />
             ) : (
               <p className="text-sm font-medium text-[#3a3f38]">
-                {viewer.homeCountry ?? "Not set"}
+                {profile.homeCountry ?? "Not set"}
               </p>
             )}
           </div>
@@ -245,12 +246,12 @@ export default function ProfilePage() {
             </div>
             <span
               className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                viewer.onboardingCompleted
+                profile.onboardingCompleted
                   ? "bg-[#e8f5e0] text-[#2d5a1b]"
                   : "bg-[#f5f0e0] text-[#6b5a2d]"
               }`}
             >
-              {viewer.onboardingCompleted ? "Complete" : "Pending"}
+              {profile.onboardingCompleted ? "Complete" : "Pending"}
             </span>
           </div>
         )}

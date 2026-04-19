@@ -202,9 +202,166 @@ textarea {
   color: #334127;
 }
 
+.wandr-map-marker {
+  display: flex;
+  height: 1.05rem;
+  width: 1.05rem;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid rgba(255, 255, 255, 0.96);
+  border-radius: 9999px;
+  background: #9fe870;
+  box-shadow:
+    0 10px 24px rgba(35, 42, 31, 0.16),
+    0 0 0 1px rgba(22, 51, 0, 0.08);
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.wandr-map-marker:hover {
+  transform: scale(1.08);
+}
+
+.wandr-map-marker.is-emphasis {
+  background: #17181a;
+}
+
+.wandr-map-marker.is-selected {
+  transform: scale(1.12);
+  box-shadow:
+    0 16px 28px rgba(35, 42, 31, 0.22),
+    0 0 0 4px rgba(159, 232, 112, 0.32);
+}
+
+.wandr-map-marker-dot {
+  height: 0.3rem;
+  width: 0.3rem;
+  border-radius: 9999px;
+  background: #294115;
+}
+
+.wandr-map-marker.is-emphasis .wandr-map-marker-dot {
+  background: #dff9cd;
+}
+
+.explore-mapbox-popup .mapboxgl-popup-content {
+  border: 1px solid rgba(21, 24, 26, 0.1);
+  border-radius: 1.4rem;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 22px 48px rgba(28, 36, 30, 0.18),
+    0 0 0 1px rgba(17, 24, 22, 0.06);
+  padding: 1rem;
+  backdrop-filter: blur(18px);
+}
+
+.explore-mapbox-popup .mapboxgl-popup-tip {
+  border-top-color: rgba(255, 255, 255, 0.96);
+}
+
+.explore-trip-timeline {
+  border-color: rgba(21, 24, 26, 0.12);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 249, 244, 0.9)),
+    rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 28px 50px rgba(25, 33, 27, 0.14),
+    0 0 0 1px rgba(18, 24, 20, 0.04);
+  animation: explore-trip-timeline-enter 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.explore-trip-timeline-scroll {
+  scrollbar-width: none;
+}
+
+.explore-trip-timeline-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.explore-trip-stop-card {
+  display: flex;
+  min-width: 14rem;
+  align-items: center;
+  border: 1px solid rgba(23, 24, 26, 0.08);
+  border-radius: 1.35rem;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow:
+    0 14px 28px rgba(25, 33, 27, 0.08),
+    0 0 0 1px rgba(18, 24, 20, 0.03);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.explore-trip-stop-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(49, 81, 23, 0.2);
+  box-shadow:
+    0 18px 32px rgba(25, 33, 27, 0.11),
+    0 0 0 1px rgba(18, 24, 20, 0.03);
+}
+
+.explore-trip-stop-card.is-active {
+  border-color: rgba(159, 232, 112, 0.56);
+  background: linear-gradient(180deg, rgba(247, 252, 241, 0.98), rgba(239, 247, 231, 0.96));
+  box-shadow:
+    0 18px 34px rgba(66, 91, 42, 0.14),
+    0 0 0 1px rgba(159, 232, 112, 0.18);
+}
+
+.explore-trip-stop-number {
+  display: inline-flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #17181a;
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  box-shadow: 0 8px 18px rgba(23, 24, 26, 0.18);
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.explore-trip-stop-card:hover .explore-trip-stop-number {
+  transform: scale(1.04);
+}
+
+.explore-trip-stop-number.is-active {
+  background: #9fe870;
+  color: #163300;
+  box-shadow: 0 10px 22px rgba(95, 149, 56, 0.2);
+}
+
+.explore-trip-connector {
+  opacity: 0.92;
+}
+
 @keyframes explore-map-loader-shimmer {
   100% {
     transform: translateX(100%);
+  }
+}
+
+@keyframes explore-trip-timeline-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -237,5 +394,13 @@ textarea {
 
   .ios-tab-item-active {
     text-shadow: 0 0 0.01px currentColor;
+  }
+
+  .explore-mapbox-popup .mapboxgl-popup-content {
+    padding: 0.9rem;
+  }
+
+  .explore-trip-stop-card {
+    min-width: 12.5rem;
   }
 }

@@ -1,14 +1,20 @@
 "use client";
 
-import { startTransition, useState } from "react";
+import { startTransition } from "react";
+import { ExploreTripTimeline } from "@/components/explore/explore-trip-timeline";
+import {
+  EXPLORE_DISCOVERY_FILTERS as filterOptions,
+  useExploreMapState,
+} from "@/components/explore/explore-map-state";
 import { Search, SlidersHorizontal } from "lucide-react";
 
-const filterOptions = ["Experiences", "Dining", "Stays"] as const;
-
-export function ExploreDiscovery() {
-  const [activeFilter, setActiveFilter] =
-    useState<(typeof filterOptions)[number]>("Experiences");
-  const [searchQuery, setSearchQuery] = useState("");
+export function ExploreDiscovery({
+  isAuthenticated,
+}: {
+  isAuthenticated: boolean;
+}) {
+  const { activeFilter, setActiveFilter, searchQuery, setSearchQuery } =
+    useExploreMapState();
 
   return (
     <section className="pointer-events-none relative isolate h-full overflow-hidden px-4 py-5 md:px-6 lg:px-8 lg:py-6">
@@ -62,6 +68,8 @@ export function ExploreDiscovery() {
         </div>
 
         <div className="min-h-0 flex-1" />
+
+        <ExploreTripTimeline isAuthenticated={isAuthenticated} />
       </div>
     </section>
   );

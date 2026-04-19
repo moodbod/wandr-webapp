@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
+import { sanitizeRedirectPath } from "@/lib/trip-intents";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -14,6 +15,11 @@ export function AuthScreen() {
   const { signIn } = useAuthActions();
   const mode: AuthMode =
     searchParams.get("mode") === "sign-up" ? "sign-up" : "sign-in";
+  const redirectTarget = sanitizeRedirectPath(searchParams.get("redirect"));
+  const redirectSuffix =
+    redirectTarget === "/explore"
+      ? ""
+      : `&redirect=${encodeURIComponent(redirectTarget)}`;
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,7 +45,7 @@ export function AuthScreen() {
       }
 
       startTransition(() => {
-        router.replace("/explore");
+        router.replace(redirectTarget);
         router.refresh();
       });
     } catch (submitError) {
@@ -161,7 +167,11 @@ export function AuthScreen() {
             ? "Don't have an account?"
             : "Already have an account?"}{" "}
           <Link
-            href={mode === "sign-in" ? "/auth?mode=sign-up" : "/auth"}
+            href={
+              mode === "sign-in"
+                ? `/auth?mode=sign-up${redirectSuffix}`
+                : `/auth${redirectTarget === "/explore" ? "" : `?redirect=${encodeURIComponent(redirectTarget)}`}`
+            }
             className="font-semibold text-[#17181a] underline underline-offset-4"
           >
             {mode === "sign-in" ? "Sign up" : "Sign in"}
