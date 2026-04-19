@@ -27,7 +27,7 @@ JWKS=
 
 - `SITE_URL` should point at your public app origin, for example `http://localhost:3000` in local development or your production domain in live deploys.
 - `JWT_PRIVATE_KEY` and `JWKS` are required by Convex Auth to sign and verify auth tokens.
-- The easiest way to set the Convex auth variables is to run `npx @convex-dev/auth`.
+- The easiest way to set the Convex auth variables is to run ``.npx @convex-dev/auth
 
 ## Getting Started
 

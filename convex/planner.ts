@@ -1,7 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
-import { namibiaPlaceSeed } from "../lib/namibia-data";
+import { DEFAULT_TRIP_TITLE, namibiaPlaceSeed } from "../lib/namibia-data";
 
 type PlannerCtx = QueryCtx | MutationCtx;
 export type { PlannerCtx };
@@ -106,6 +106,30 @@ export async function getTripStops(ctx: PlannerCtx, tripId: Id<"trips">) {
   return stops.toSorted((left, right) => left.orderIndex - right.orderIndex);
 }
 
+function isTripInProgress(trip: Doc<"trips"> | null | undefined) {
+  return Boolean(trip && trip.status !== "completed");
+}
+
+export async function getViewerCurrentTrip(
+  ctx: PlannerCtx,
+  userId: Id<"users">,
+) {
+  const preferences = await getViewerPreferences(ctx, userId);
+  if (preferences?.activeTripId) {
+    const activeTrip = await ctx.db.get(preferences.activeTripId);
+    if (
+      activeTrip &&
+      activeTrip.ownerId === userId &&
+      isTripInProgress(activeTrip)
+    ) {
+      return activeTrip;
+    }
+  }
+
+  const trips = await getViewerTrips(ctx, userId);
+  return trips.find((trip) => isTripInProgress(trip)) ?? null;
+}
+
 export async function resolveEffectiveTrip(
   ctx: PlannerCtx,
   userId: Id<"users">,
@@ -115,16 +139,7 @@ export async function resolveEffectiveTrip(
     return await getTripByIdForViewer(ctx, requestedTripId, userId);
   }
 
-  const preferences = await getViewerPreferences(ctx, userId);
-  if (preferences?.activeTripId) {
-    const activeTrip = await ctx.db.get(preferences.activeTripId);
-    if (activeTrip && activeTrip.ownerId === userId) {
-      return activeTrip;
-    }
-  }
-
-  const [latestTrip] = await getViewerTrips(ctx, userId);
-  return latestTrip ?? null;
+  return await getViewerCurrentTrip(ctx, userId);
 }
 
 export async function createDraftTripForViewer(
@@ -139,9 +154,19 @@ export async function createDraftTripForViewer(
   },
 ) {
   const now = Date.now();
+  const existingTrip = await getViewerCurrentTrip(ctx, userId);
+  if (existingTrip) {
+    const preferences = await ensureViewerPreferences(ctx, userId);
+    await ctx.db.patch(preferences._id, {
+      activeTripId: existingTrip._id,
+      updatedAt: now,
+    });
+    return existingTrip;
+  }
+
   const tripId = await ctx.db.insert("trips", {
     ownerId: userId,
-    title: args?.title?.trim() || "My Namibia Trip",
+    title: args?.title?.trim() || DEFAULT_TRIP_TITLE,
     description: args?.description ?? null,
     coverImage: args?.coverImage ?? null,
     startDate: args?.startDate ?? null,

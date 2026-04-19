@@ -18,6 +18,7 @@ import { useMutation, useQuery } from "convex/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { useExploreMapState } from "@/components/explore/explore-map-state";
+import { useRoutePreview } from "@/components/maps/use-route-preview";
 import { buildAddToTripIntent, buildAuthRedirectPath } from "@/lib/trip-intents";
 
 const MAPBOX_STYLE = "mapbox://styles/mapbox/light-v11";
@@ -213,30 +214,6 @@ function attachSharedMapListeners(map: mapboxgl.Map) {
   sharedMapState.listenersAttached = true;
 }
 
-function normalizeRouteCoordinates(
-  coordinates: unknown,
-  fallbackCoordinates: [number, number][],
-) {
-  if (!Array.isArray(coordinates)) {
-    return fallbackCoordinates;
-  }
-
-  const normalized = coordinates.flatMap((entry) => {
-    if (
-      Array.isArray(entry) &&
-      entry.length === 2 &&
-      typeof entry[0] === "number" &&
-      typeof entry[1] === "number"
-    ) {
-      return [[entry[0], entry[1]] as [number, number]];
-    }
-
-    return [];
-  });
-
-  return normalized.length > 1 ? normalized : fallbackCoordinates;
-}
-
 function buildPoiGeoJson(places: ExploreMapPoi[]) {
   return {
     type: "FeatureCollection" as const,
@@ -332,10 +309,6 @@ export function ExploreMapboxCanvas({
   );
   const [addingSlug, setAddingSlug] = useState<string | null>(null);
   const [recentlyAddedSlug, setRecentlyAddedSlug] = useState<string | null>(null);
-  const [roadRoutePreview, setRoadRoutePreview] = useState<{
-    coordinates: [number, number][];
-    key: string;
-  } | null>(null);
   const token = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
   const router = useRouter();
   const pathname = usePathname();
@@ -416,21 +389,9 @@ export function ExploreMapboxCanvas({
     () => new Set([...places.map((place) => place.slug), ...stopPlaceSlugs]),
     [places, stopPlaceSlugs],
   );
-  const stopCoordinatesKey = useMemo(
-    () => JSON.stringify(stopCoordinates),
-    [stopCoordinates],
-  );
-  const activeRouteCoordinates = useMemo(
-    () =>
-      !isAuthenticated
-        ? []
-        : stopCoordinates.length > 1
-          ? roadRoutePreview?.key === stopCoordinatesKey &&
-            roadRoutePreview.coordinates.length > 1
-            ? roadRoutePreview.coordinates
-            : stopCoordinates
-          : stopCoordinates,
-    [isAuthenticated, roadRoutePreview, stopCoordinates, stopCoordinatesKey],
+  const activeRouteCoordinates = useRoutePreview(
+    stopCoordinates,
+    isAuthenticated,
   );
 
   const handlePopupClose = useEffectEvent(() => {
@@ -599,61 +560,6 @@ export function ExploreMapboxCanvas({
     setSelectedPlaceSlug,
     tripWorkspace,
   ]);
-
-  useEffect(() => {
-    if (!isAuthenticated || tripWorkspace === undefined || stopCoordinates.length < 2) {
-      return;
-    }
-
-    const controller = new AbortController();
-    let isActive = true;
-
-    async function fetchRoutePreview() {
-      try {
-        const response = await fetch("/api/explore-route-preview", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ coordinates: stopCoordinates }),
-          cache: "no-store",
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error("Route preview failed.");
-        }
-
-        const payload = (await response.json()) as {
-          routeCoordinates?: unknown;
-        };
-
-        if (isActive) {
-          setRoadRoutePreview({
-            coordinates: normalizeRouteCoordinates(
-              payload.routeCoordinates,
-              stopCoordinates,
-            ),
-            key: stopCoordinatesKey,
-          });
-        }
-      } catch {
-        if (!controller.signal.aborted && isActive) {
-          setRoadRoutePreview({
-            coordinates: stopCoordinates,
-            key: stopCoordinatesKey,
-          });
-        }
-      }
-    }
-
-    void fetchRoutePreview();
-
-    return () => {
-      isActive = false;
-      controller.abort();
-    };
-  }, [isAuthenticated, stopCoordinates, stopCoordinatesKey, tripWorkspace]);
 
   useEffect(() => {
     if (intent === "add-stop" && intentPlaceSlug) {

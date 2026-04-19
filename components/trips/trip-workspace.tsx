@@ -1,19 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRoutePreview } from "@/components/maps/use-route-preview";
 import { WandrMap, type WandrMapMarker } from "@/components/maps/wandr-map";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
-import {
-  ChevronDown,
-  ChevronUp,
-  Compass,
-  MapPin,
-  Plus,
-  Trash2,
-} from "lucide-react";
-import { startTransition, useMemo, useState } from "react";
+import { ChevronDown, ChevronUp, Compass, MapPin, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 
 /* ── Formatters ── */
 
@@ -22,6 +16,24 @@ const dateFmt = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
   year: "numeric",
 });
+type TripWorkspaceStop = {
+  _id: Id<"tripStops">;
+  dayNumber: number | null;
+  note: string | null;
+  orderIndex: number;
+  place: {
+    coordinates: number[];
+    title: string;
+    region: string;
+    summary: string;
+    category: string;
+    estimatedVisitDuration: string;
+    driveTimeFromWindhoek: string;
+  };
+};
+
+const EMPTY_STOPS: TripWorkspaceStop[] = [];
+const EMPTY_ROUTE_COORDINATES: [number, number][] = [];
 
 function fmtDate(v: string | null | undefined) {
   if (!v) return null;
@@ -38,28 +50,34 @@ function fmtRange(s: string | null | undefined, e: string | null | undefined) {
   return "Dates flexible";
 }
 
+function fmtStatus(status: "draft" | "planned" | "active" | "completed") {
+  switch (status) {
+    case "draft":
+      return "Draft";
+    case "planned":
+      return "Planned";
+    case "active":
+      return "Active trip";
+    case "completed":
+      return "Completed";
+  }
+}
+
 /* ── Component ── */
 
 export function TripWorkspace() {
-  const trips = useQuery(api.trips.listViewerTrips);
-  const activeTripId = useQuery(api.trips.getActiveTrip);
-  const [pickedId, setPickedId] = useState<Id<"trips"> | null>(null);
   const workspace = useQuery(api.trips.getTripWorkspace, {
-    tripId: pickedId ?? activeTripId ?? null,
+    tripId: null,
   });
-
-  const createTrip = useMutation(api.trips.createDraftTrip);
-  const setActive = useMutation(api.trips.setActiveTrip);
   const removeStop = useMutation(api.tripStops.removeStop);
   const reorder = useMutation(api.tripStops.reorderStops);
   const updateMeta = useMutation(api.tripStops.updateStopMeta);
 
-  const [busy, setBusy] = useState(false);
-
-  const list = trips ?? [];
-  const tripId = workspace?.trip?._id ?? pickedId ?? activeTripId ?? null;
-  const trip = list.find((t) => t._id === tripId) ?? workspace?.trip ?? null;
-  const stops = workspace?.stops ?? [];
+  const trip = workspace?.trip ?? null;
+  const stops = workspace?.stops ?? EMPTY_STOPS;
+  const routeCoordinates = useRoutePreview(
+    workspace?.routeCoordinates ?? EMPTY_ROUTE_COORDINATES,
+  );
 
   const markers = useMemo<WandrMapMarker[]>(
     () =>
@@ -75,23 +93,8 @@ export function TripWorkspace() {
 
   const dayLimit = Math.max(trip?.dayCount ?? 0, stops.length, 5);
 
-  async function handleCreate() {
-    setBusy(true);
-    try {
-      const r = await createTrip({});
-      startTransition(() => setPickedId(r.tripId));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleSwitch(id: Id<"trips">) {
-    startTransition(() => setPickedId(id));
-    await setActive({ tripId: id });
-  }
-
   /* Loading */
-  if (!trips || activeTripId === undefined || workspace === undefined) {
+  if (workspace === undefined) {
     return (
       <div className="space-y-5">
         <div className="h-[360px] animate-pulse rounded-2xl bg-black/[0.03]" />
@@ -103,8 +106,8 @@ export function TripWorkspace() {
     );
   }
 
-  /* Empty — no trips */
-  if (list.length === 0 || !workspace.trip) {
+  /* Empty — no active or draft trip */
+  if (!trip) {
     return (
       <div className="space-y-5">
         {/* Map */}
@@ -120,30 +123,19 @@ export function TripWorkspace() {
         {/* Empty CTA */}
         <div className="mx-auto max-w-md py-8 text-center">
           <h1 className="text-2xl font-bold tracking-tight text-[#17181a]">
-            Plan your trip
+            No active trip yet
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-[#71776e]">
-            Create a draft, add stops from Explore, and build your route on the
-            map.
+            Browse places, add your first stop, and we&apos;ll open your draft
+            trip here automatically.
           </p>
-          <div className="mt-5 flex justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => void handleCreate()}
-              disabled={busy}
-              className="pill-button inline-flex items-center gap-2 bg-[#17181a] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-            >
-              <Plus className="size-4" />
-              {busy ? "Creating…" : "Create trip"}
-            </button>
-            <Link
-              href="/explore"
-              className="pill-button inline-flex items-center gap-2 bg-[#9fe870] px-6 py-3.5 text-sm font-bold text-[#163300] shadow-sm"
-            >
-              <Compass className="size-4" />
-              Browse places
-            </Link>
-          </div>
+          <Link
+            href="/explore"
+            className="pill-button mt-5 inline-flex items-center gap-2 bg-[#9fe870] px-6 py-3.5 text-sm font-bold text-[#163300] shadow-sm"
+          >
+            <Compass className="size-4" />
+            Browse places
+          </Link>
         </div>
       </div>
     );
@@ -157,7 +149,7 @@ export function TripWorkspace() {
         <WandrMap
           className="absolute inset-0"
           markers={markers}
-          routeCoordinates={workspace.routeCoordinates}
+          routeCoordinates={routeCoordinates}
           fitToData
         />
         {/* Stop count pill */}
@@ -169,40 +161,26 @@ export function TripWorkspace() {
       {/* ── Trip header ── */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-[#17181a] lg:text-2xl">
-            {workspace.trip.title}
-          </h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-[#17181a] lg:text-2xl">
+              {trip.title}
+            </h1>
+            <span className="rounded-full bg-[#eef6e7] px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[#315117]">
+              {fmtStatus(trip.status)}
+            </span>
+          </div>
           <p className="mt-0.5 text-xs text-[#9a9f97]">
-            {fmtRange(trip?.startDate, trip?.endDate)} ·{" "}
-            {trip?.dayCount ?? 0} {(trip?.dayCount ?? 0) === 1 ? "day" : "days"}
+            {fmtRange(trip.startDate, trip.endDate)} · {trip.dayCount}{" "}
+            {trip.dayCount === 1 ? "day" : "days"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {list.length > 1 ? (
-            <select
-              value={tripId ?? ""}
-              onChange={(e) =>
-                void handleSwitch(e.target.value as Id<"trips">)
-              }
-              className="rounded-lg border border-[#e5e5e3] bg-white px-3 py-2 text-xs font-medium text-[#3a3f38] outline-none"
-            >
-              {list.map((t) => (
-                <option key={t._id} value={t._id}>
-                  {t.title}
-                </option>
-              ))}
-            </select>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => void handleCreate()}
-            disabled={busy}
-            className="pill-button flex items-center gap-1.5 bg-[#17181a] px-3.5 py-2 text-xs font-semibold text-white disabled:opacity-60"
-          >
-            <Plus className="size-3.5" />
-            New
-          </button>
-        </div>
+        <Link
+          href="/explore"
+          className="pill-button inline-flex items-center gap-2 bg-[#17181a] px-4 py-2.5 text-sm font-semibold text-white"
+        >
+          <Compass className="size-4" />
+          Add stops
+        </Link>
       </div>
 
       {/* ── Stops list ── */}
@@ -236,18 +214,17 @@ export function TripWorkspace() {
                 isFirst={i === 0}
                 isLast={i === stops.length - 1}
                 dayLimit={dayLimit}
-                tripId={workspace.trip._id as Id<"trips">}
                 onRemove={() => void removeStop({ stopId: stop._id })}
                 onMoveUp={() =>
                   void reorder({
-                    tripId: workspace.trip._id as Id<"trips">,
+                    tripId: trip._id,
                     stopId: stop._id,
                     direction: "up",
                   })
                 }
                 onMoveDown={() =>
                   void reorder({
-                    tripId: workspace.trip._id as Id<"trips">,
+                    tripId: trip._id,
                     stopId: stop._id,
                     direction: "down",
                   })
@@ -277,24 +254,11 @@ function StopRow({
   onMoveDown,
   onUpdateMeta,
 }: {
-  stop: {
-    _id: string;
-    dayNumber: number | null;
-    note: string | null;
-    place: {
-      title: string;
-      region: string;
-      summary: string;
-      category: string;
-      estimatedVisitDuration: string;
-      driveTimeFromWindhoek: string;
-    };
-  };
+  stop: TripWorkspaceStop;
   index: number;
   isFirst: boolean;
   isLast: boolean;
   dayLimit: number;
-  tripId: Id<"trips">;
   onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;

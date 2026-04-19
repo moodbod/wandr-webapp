@@ -1,5 +1,6 @@
 export const NAMIBIA_CENTER: [number, number] = [17.0832, -22.5597];
-export const DEFAULT_NAMIBIA_TRIP_TITLE = "My Namibia Trip";
+export const DEFAULT_TRIP_TITLE = "My Trip";
+export const LEGACY_DEFAULT_NAMIBIA_TRIP_TITLE = "My Namibia Trip";
 
 export const PLACE_CATEGORIES = [
   "Desert",

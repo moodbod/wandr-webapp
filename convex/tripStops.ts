@@ -4,12 +4,12 @@ import {
   createDraftTripForViewer,
   ensureNamibiaPlaces,
   ensureViewerPreferences,
+  getViewerCurrentTrip,
   getTripByIdForViewer,
   getTripStops,
-  getViewerPreferences,
   requireViewerId,
 } from "./planner";
-import { DEFAULT_NAMIBIA_TRIP_TITLE } from "../lib/namibia-data";
+import { DEFAULT_TRIP_TITLE } from "../lib/namibia-data";
 import type { Id } from "./_generated/dataModel";
 
 async function getOrCreateActiveTripId(
@@ -22,16 +22,13 @@ async function getOrCreateActiveTripId(
     return trip._id;
   }
 
-  const preferences = await getViewerPreferences(ctx, userId);
-  if (preferences?.activeTripId) {
-    const trip = await ctx.db.get(preferences.activeTripId);
-    if (trip && trip.ownerId === userId) {
-      return trip._id;
-    }
+  const currentTrip = await getViewerCurrentTrip(ctx, userId);
+  if (currentTrip) {
+    return currentTrip._id;
   }
 
   const trip = await createDraftTripForViewer(ctx, userId, {
-    title: DEFAULT_NAMIBIA_TRIP_TITLE,
+    title: DEFAULT_TRIP_TITLE,
   });
   return trip._id;
 }

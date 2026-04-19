@@ -11,11 +11,20 @@ import {
   resolveEffectiveTrip,
 } from "./planner";
 import type { Doc, Id } from "./_generated/dataModel";
+import {
+  DEFAULT_TRIP_TITLE,
+  LEGACY_DEFAULT_NAMIBIA_TRIP_TITLE,
+} from "../lib/namibia-data";
 
 function summarizeTrip(trip: Doc<"trips">, stopCount: number, dayCount: number) {
+  const normalizedTitle =
+    trip.title === LEGACY_DEFAULT_NAMIBIA_TRIP_TITLE
+      ? DEFAULT_TRIP_TITLE
+      : trip.title;
+
   return {
     _id: trip._id,
-    title: trip.title,
+    title: normalizedTitle,
     description: trip.description,
     status: trip.status,
     startDate: trip.startDate,
