@@ -1,4 +1,4 @@
-const AUTH_MAP_STYLE = "mapbox/light-v11";
+const AUTH_MAP_STYLE = "mapbox/streets-v12";
 const AUTH_MAP_CENTER: [number, number] = [10, 18];
 const AUTH_MAP_ZOOM = 0.7;
 const AUTH_MAP_BEARING = 0;

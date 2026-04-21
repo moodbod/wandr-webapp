@@ -21,9 +21,13 @@ import { useExploreMapState } from "@/components/explore/explore-map-state";
 import { useRoutePreview } from "@/components/maps/use-route-preview";
 import { buildAddToTripIntent, buildAuthRedirectPath } from "@/lib/trip-intents";
 
-const MAPBOX_STYLE = "mapbox://styles/mapbox/light-v11";
+const MAPBOX_STYLE = "mapbox://styles/mapbox/streets-v12";
 const MAPBOX_CENTER: [number, number] = [17.0832, -22.5597];
 const MAPBOX_ZOOM = 5.15;
+const MAPBOX_MIN_TILE_CACHE_SIZE = 384;
+const MAPBOX_MAX_TILE_CACHE_SIZE = 1400;
+const MAPBOX_TRACKPAD_ZOOM_RATE = 1 / 125;
+const MAPBOX_WHEEL_ZOOM_RATE = 1 / 620;
 const MAPBOX_CAMERA_STORAGE_KEY = "wandr:explore-map-camera";
 const EXPLORE_POI_SOURCE_ID = "wandr-explore-pois-source";
 const EXPLORE_POI_LAYER_ID = "wandr-explore-pois-layer";
@@ -76,6 +80,8 @@ const sharedMapState: SharedMapState = {
   map: null,
   parkingElement: null,
 };
+
+let isMapboxRuntimePrepared = false;
 
 type ExploreMapboxCanvasProps = {
   className?: string;
@@ -212,6 +218,25 @@ function attachSharedMapListeners(map: mapboxgl.Map) {
   });
 
   sharedMapState.listenersAttached = true;
+}
+
+function prepareMapboxRuntime(token: string) {
+  mapboxgl.accessToken = token;
+
+  if (isMapboxRuntimePrepared) {
+    return;
+  }
+
+  const hardwareConcurrency =
+    typeof navigator === "undefined" ? 2 : navigator.hardwareConcurrency;
+  mapboxgl.workerCount = Math.min(4, Math.max(2, hardwareConcurrency ?? 2));
+  mapboxgl.prewarm();
+  isMapboxRuntimePrepared = true;
+}
+
+function tuneMapboxZoom(map: mapboxgl.Map) {
+  map.scrollZoom.setZoomRate(MAPBOX_TRACKPAD_ZOOM_RATE);
+  map.scrollZoom.setWheelZoomRate(MAPBOX_WHEEL_ZOOM_RATE);
 }
 
 function buildPoiGeoJson(places: ExploreMapPoi[]) {
@@ -464,7 +489,7 @@ export function ExploreMapboxCanvas({
 
     const containerElement = containerRef.current;
     const hostElement = getOrCreateHostElement();
-    mapboxgl.accessToken = token;
+    prepareMapboxRuntime(token);
     let readyFrame: number | null = null;
 
     containerElement.appendChild(hostElement);
@@ -477,12 +502,17 @@ export function ExploreMapboxCanvas({
         center: storedCamera?.center ?? MAPBOX_CENTER,
         container: hostElement,
         dragRotate: false,
+        fadeDuration: 0,
+        maxTileCacheSize: MAPBOX_MAX_TILE_CACHE_SIZE,
+        minTileCacheSize: MAPBOX_MIN_TILE_CACHE_SIZE,
         pitch: storedCamera?.pitch ?? 0,
+        refreshExpiredTiles: false,
         style: MAPBOX_STYLE,
         touchPitch: false,
         zoom: storedCamera?.zoom ?? MAPBOX_ZOOM,
       });
 
+      tuneMapboxZoom(map);
       map.addControl(new mapboxgl.AttributionControl({ compact: true }), "top-left");
       sharedMapState.map = map;
       sharedMapState.isReady = false;

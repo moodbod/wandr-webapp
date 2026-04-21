@@ -10,7 +10,13 @@ import {
   useState,
 } from "react";
 
-const MAPBOX_STYLE = "mapbox://styles/mapbox/light-v11";
+const MAPBOX_STYLE = "mapbox://styles/mapbox/streets-v12";
+const MAPBOX_MIN_TILE_CACHE_SIZE = 384;
+const MAPBOX_MAX_TILE_CACHE_SIZE = 1400;
+const MAPBOX_TRACKPAD_ZOOM_RATE = 1 / 125;
+const MAPBOX_WHEEL_ZOOM_RATE = 1 / 620;
+
+let isMapboxRuntimePrepared = false;
 
 type StoredCameraState = {
   bearing: number;
@@ -88,7 +94,7 @@ export function WandrMap({
     }
 
     const markerStore = markerStoreRef.current;
-    mapboxgl.accessToken = token;
+    prepareMapboxRuntime(token);
     const storedCamera = readStoredCameraState(cameraStorageKey);
     const map = new mapboxgl.Map({
       attributionControl: false,
@@ -96,13 +102,18 @@ export function WandrMap({
       center: storedCamera?.center ?? initialCenter,
       container: containerRef.current,
       dragRotate: false,
+      fadeDuration: 0,
+      maxTileCacheSize: MAPBOX_MAX_TILE_CACHE_SIZE,
+      minTileCacheSize: MAPBOX_MIN_TILE_CACHE_SIZE,
       pitch: storedCamera?.pitch ?? initialPitch,
+      refreshExpiredTiles: false,
       style: MAPBOX_STYLE,
       touchPitch: false,
       zoom: storedCamera?.zoom ?? initialZoom,
     });
 
     mapRef.current = map;
+    tuneMapboxZoom(map);
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), "top-left");
 
     let restoreTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -373,6 +384,25 @@ export function WandrMap({
       ) : null}
     </div>
   );
+}
+
+function prepareMapboxRuntime(token: string) {
+  mapboxgl.accessToken = token;
+
+  if (isMapboxRuntimePrepared) {
+    return;
+  }
+
+  const hardwareConcurrency =
+    typeof navigator === "undefined" ? 2 : navigator.hardwareConcurrency;
+  mapboxgl.workerCount = Math.min(4, Math.max(2, hardwareConcurrency ?? 2));
+  mapboxgl.prewarm();
+  isMapboxRuntimePrepared = true;
+}
+
+function tuneMapboxZoom(map: mapboxgl.Map) {
+  map.scrollZoom.setZoomRate(MAPBOX_TRACKPAD_ZOOM_RATE);
+  map.scrollZoom.setWheelZoomRate(MAPBOX_WHEEL_ZOOM_RATE);
 }
 
 function readStoredCameraState(storageKey?: string): StoredCameraState | null {

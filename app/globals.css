@@ -110,6 +110,7 @@ textarea {
 .explore-mapbox-canvas {
   position: absolute;
   overflow: hidden;
+  contain: layout paint;
   transition:
     opacity 220ms ease,
     visibility 220ms ease;
@@ -148,6 +149,10 @@ textarea {
   visibility: hidden;
 }
 
+.explore-mapbox-loader.is-hidden::after {
+  animation: none;
+}
+
 .explore-mapbox-canvas .mapboxgl-map {
   opacity: 0;
   transition: opacity 220ms ease;
@@ -177,7 +182,9 @@ textarea {
 }
 
 .explore-mapbox-canvas .mapboxgl-map {
-  filter: saturate(0.82) contrast(0.96) brightness(1.06);
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .explore-mapbox-canvas .mapboxgl-ctrl-top-left {
