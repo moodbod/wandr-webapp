@@ -8,4 +8,5 @@ export type ViewerProfile = {
   homeCountry: string | null;
   travelStyle: string | null;
   preferredActivities: string[];
+  role: "traveler" | "admin";
 };

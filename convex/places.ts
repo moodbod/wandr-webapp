@@ -18,6 +18,25 @@ async function loadPlaces(ctx: QueryCtx) {
   return namibiaPlaceSeed;
 }
 
+function placeListingType(
+  place: Awaited<ReturnType<typeof loadPlaces>>[number],
+  selectedFilter?: ExploreDiscoveryFilter,
+) {
+  if ("listingType" in place && place.listingType) {
+    return place.listingType;
+  }
+
+  if (selectedFilter === "Activities") {
+    return "activity" as const;
+  }
+
+  if (selectedFilter === "Stays" || place.category === "Stay") {
+    return "stay" as const;
+  }
+
+  return "landmark" as const;
+}
+
 export const seedNamibiaPlacesIfNeeded = mutation({
   args: {},
   handler: async (ctx) => {
@@ -81,7 +100,7 @@ export const listExploreMapPois = query({
     const selectedFilter =
       args.category && args.category in EXPLORE_DISCOVERY_FILTER_POI_SLUGS
         ? (args.category as ExploreDiscoveryFilter)
-        : "Experiences";
+        : "Landmarks";
     const allowedSlugs = new Set<string>(EXPLORE_MAP_PLACE_SLUGS);
     const filterSlugs = new Set<string>(
       EXPLORE_DISCOVERY_FILTER_POI_SLUGS[selectedFilter],
@@ -91,6 +110,7 @@ export const listExploreMapPois = query({
     return places
       .filter((place) => allowedSlugs.has(place.slug))
       .filter((place) => filterSlugs.has(place.slug))
+      .filter((place) => !("isVisibleOnMap" in place) || place.isVisibleOnMap !== false)
       .filter((place) => {
         if (!normalizedSearch) {
           return true;
@@ -108,7 +128,11 @@ export const listExploreMapPois = query({
 
         return haystack.includes(normalizedSearch);
       })
-      .toSorted((left, right) => left.sortOrder - right.sortOrder);
+      .toSorted((left, right) => left.sortOrder - right.sortOrder)
+      .map((place) => ({
+        ...place,
+        listingType: placeListingType(place, selectedFilter),
+      }));
   },
 });
 

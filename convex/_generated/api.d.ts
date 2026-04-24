@@ -8,9 +8,13 @@
  * @module
  */
 
+import type * as admins from "../admins.js";
 import type * as auth from "../auth.js";
+import type * as bookings from "../bookings.js";
+import type * as budgets from "../budgets.js";
 import type * as debug from "../debug.js";
 import type * as http from "../http.js";
+import type * as liveTrips from "../liveTrips.js";
 import type * as places from "../places.js";
 import type * as planner from "../planner.js";
 import type * as tripStops from "../tripStops.js";
@@ -24,9 +28,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  admins: typeof admins;
   auth: typeof auth;
+  bookings: typeof bookings;
+  budgets: typeof budgets;
   debug: typeof debug;
   http: typeof http;
+  liveTrips: typeof liveTrips;
   places: typeof places;
   planner: typeof planner;
   tripStops: typeof tripStops;

@@ -18,6 +18,7 @@ export default defineSchema({
     onboardingCompleted: v.optional(v.boolean()),
     homeCountry: v.optional(v.union(v.string(), v.null())),
     travelStyle: v.optional(v.union(v.string(), v.null())),
+    role: v.optional(v.union(v.literal("traveler"), v.literal("admin"))),
   })
     .index("email", ["email"])
     .index("phone", ["phone"]),
@@ -53,6 +54,10 @@ export default defineSchema({
     roadAccessNote: v.string(),
     driveTimeFromWindhoek: v.string(),
     sortOrder: v.number(),
+    listingType: v.optional(
+      v.union(v.literal("landmark"), v.literal("activity"), v.literal("stay")),
+    ),
+    isVisibleOnMap: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -89,4 +94,108 @@ export default defineSchema({
   })
     .index("by_trip_id_and_order", ["tripId", "orderIndex"])
     .index("by_trip_id_and_place_id", ["tripId", "placeId"]),
+
+  bookableOffers: defineTable({
+    placeId: v.id("places"),
+    kind: v.union(
+      v.literal("activity"),
+      v.literal("tour"),
+      v.literal("stay"),
+      v.literal("transport"),
+    ),
+    title: v.string(),
+    providerName: v.string(),
+    description: v.string(),
+    priceEstimate: v.number(),
+    currency: v.string(),
+    duration: v.string(),
+    bookingMode: v.literal("request"),
+    status: v.union(v.literal("active"), v.literal("paused")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_place_id", ["placeId"])
+    .index("by_status", ["status"]),
+
+  bookingRequests: defineTable({
+    userId: v.id("users"),
+    tripId: v.id("trips"),
+    stopId: v.union(v.id("tripStops"), v.null()),
+    offerId: v.id("bookableOffers"),
+    placeId: v.id("places"),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("requested"),
+      v.literal("confirmed"),
+      v.literal("declined"),
+      v.literal("cancelled"),
+    ),
+    requestedDateTime: v.union(v.string(), v.null()),
+    guestCount: v.number(),
+    note: v.union(v.string(), v.null()),
+    estimatedTotal: v.number(),
+    currency: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_trip_id", ["tripId"])
+    .index("by_trip_id_and_stop_id", ["tripId", "stopId"])
+    .index("by_user_id", ["userId"]),
+
+  tripBudgets: defineTable({
+    tripId: v.id("trips"),
+    userId: v.id("users"),
+    currency: v.string(),
+    targetAmount: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_trip_id", ["tripId"])
+    .index("by_user_id", ["userId"]),
+
+  tripBudgetItems: defineTable({
+    tripId: v.id("trips"),
+    stopId: v.union(v.id("tripStops"), v.null()),
+    category: v.union(
+      v.literal("activity"),
+      v.literal("stay"),
+      v.literal("transport"),
+      v.literal("food"),
+      v.literal("park_fees"),
+      v.literal("manual"),
+    ),
+    label: v.string(),
+    estimatedAmount: v.number(),
+    actualAmount: v.union(v.number(), v.null()),
+    currency: v.string(),
+    sourceBookingRequestId: v.optional(
+      v.union(v.id("bookingRequests"), v.null()),
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_trip_id", ["tripId"])
+    .index("by_trip_id_and_stop_id", ["tripId", "stopId"]),
+
+  tripLiveSessions: defineTable({
+    tripId: v.id("trips"),
+    userId: v.id("users"),
+    status: v.union(v.literal("active"), v.literal("ended")),
+    consentedAt: v.number(),
+    startedAt: v.number(),
+    endedAt: v.union(v.number(), v.null()),
+    latestLatitude: v.union(v.number(), v.null()),
+    latestLongitude: v.union(v.number(), v.null()),
+    latestAccuracy: v.union(v.number(), v.null()),
+    latestRecordedAt: v.union(v.number(), v.null()),
+    nearestStopId: v.union(v.id("tripStops"), v.null()),
+    arrivedStopId: v.union(v.id("tripStops"), v.null()),
+    arrivedAt: v.union(v.number(), v.null()),
+    departedAt: v.union(v.number(), v.null()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_trip_id", ["tripId"])
+    .index("by_trip_id_and_status", ["tripId", "status"])
+    .index("by_user_id_and_status", ["userId", "status"]),
 });

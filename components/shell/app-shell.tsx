@@ -13,6 +13,7 @@ import {
   LogOut,
   Map,
   Route,
+  ShieldCheck,
   UserRound,
   UsersRound,
   WalletCards,
@@ -51,6 +52,14 @@ const navigation = [
     requiresAuth: true,
   },
   {
+    id: "admin",
+    href: "/admin",
+    label: "Admin",
+    icon: ShieldCheck,
+    requiresAuth: true,
+    requiresAdmin: true,
+  },
+  {
     id: "profile",
     href: "/profile",
     label: "Profile",
@@ -81,6 +90,7 @@ export function AppShell({
   const shouldMountExploreMap = isExploreRoute || hasExploreMapSession();
   const plannerHref = isAuthenticated ? "/trips" : "/auth";
   const displayName = viewer?.name ?? "Traveler";
+  const visibleNavigation = navigation.filter((item) => !item.requiresAdmin || viewer?.role === "admin");
   const initials =
     displayName
       .split(" ")
@@ -138,7 +148,7 @@ export function AppShell({
 
             {/* Nav links */}
             <nav className="flex-1 space-y-0.5">
-              {navigation.map((item) => {
+              {visibleNavigation.map((item) => {
                 const href =
                   !isAuthenticated && item.requiresAuth ? "/auth" : item.href;
                 const active = isActivePath(pathname, item.href);
@@ -255,7 +265,7 @@ export function AppShell({
 
         {/* ─── Mobile tab bar ─── */}
         <nav className="ios-tab-bar fixed inset-x-4 bottom-[calc(0.7rem+var(--safe-area-bottom))] z-50 flex items-center justify-between rounded-2xl px-2 py-1.5 lg:hidden">
-          {navigation.map((item) => {
+          {visibleNavigation.map((item) => {
             const href =
               !isAuthenticated && item.requiresAuth ? "/auth" : item.href;
             const active = isActivePath(pathname, item.href);

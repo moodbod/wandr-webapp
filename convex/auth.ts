@@ -16,7 +16,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 
         return {
           email,
-          ...(flow === "signUp" ? { name: name || "Traveler" } : {}),
+          ...(flow === "signUp" ? { name: name || "Traveler", role: "traveler" as const } : {}),
         };
       },
     }),

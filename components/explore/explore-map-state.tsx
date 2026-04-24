@@ -30,7 +30,7 @@ export function ExploreMapStateProvider({
   children: ReactNode;
 }) {
   const [activeFilter, setActiveFilter] =
-    useState<ExploreDiscoveryFilter>("Experiences");
+    useState<ExploreDiscoveryFilter>("Landmarks");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlaceSlug, setSelectedPlaceSlug] = useState<string | null>(null);
 

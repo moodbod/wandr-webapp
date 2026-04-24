@@ -23,10 +23,11 @@ export default async function PlaceDetailsPage({
 
   const authenticated = await isAuthenticated();
   const viewer = authenticated
-    ? ((await fetchAuthQuery(api.users.getViewerProfile)) as ViewerProfile)
+    ? ((await fetchAuthQuery(api.users.getViewerProfile)) as ViewerProfile | null)
     : null;
-  const tripHref = authenticated ? "/trips" : "/auth";
-  const tripLabel = authenticated ? "Set this in my trip" : "Log in to set trips";
+  const hasViewer = Boolean(viewer);
+  const tripHref = hasViewer ? "/trips" : "/auth";
+  const tripLabel = hasViewer ? "Set this in my trip" : "Log in to set trips";
 
   return (
     <AppShell viewer={viewer}>

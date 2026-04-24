@@ -7,12 +7,13 @@ import type { ViewerProfile } from "@/lib/types";
 export default async function ExplorePage() {
   const authenticated = await isAuthenticated();
   const viewer = authenticated
-    ? ((await fetchAuthQuery(api.users.getViewerProfile)) as ViewerProfile)
+    ? ((await fetchAuthQuery(api.users.getViewerProfile)) as ViewerProfile | null)
     : null;
+  const hasViewer = Boolean(viewer);
 
   return (
     <AppShell viewer={viewer}>
-      <ExploreDiscovery isAuthenticated={authenticated} />
+      <ExploreDiscovery isAuthenticated={hasViewer} />
     </AppShell>
   );
 }

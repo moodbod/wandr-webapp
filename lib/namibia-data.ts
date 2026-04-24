@@ -13,8 +13,8 @@ export const PLACE_CATEGORIES = [
 
 export const EXPLORE_FILTERS = ["All", ...PLACE_CATEGORIES] as const;
 export const EXPLORE_DISCOVERY_FILTERS = [
-  "Experiences",
-  "Dining",
+  "Landmarks",
+  "Activities",
   "Stays",
 ] as const;
 export const EXPLORE_MAP_PLACE_SLUGS = [
@@ -30,9 +30,9 @@ export const EXPLORE_MAP_PLACE_SLUGS = [
   "kolmanskop-and-luderitz",
 ] as const;
 export const EXPLORE_DISCOVERY_FILTER_POI_SLUGS = {
-  Experiences: [...EXPLORE_MAP_PLACE_SLUGS],
-  Dining: ["swakopmund", "kolmanskop-and-luderitz"],
-  Stays: ["spitzkoppe", "swakopmund", "waterberg-plateau"],
+  Landmarks: [...EXPLORE_MAP_PLACE_SLUGS],
+  Activities: ["swakopmund", "sandwich-harbour", "sossusvlei-deadvlei", "etosha-national-park"],
+  Stays: ["spitzkoppe", "swakopmund", "waterberg-plateau", "sossusvlei-deadvlei", "etosha-national-park"],
 } as const;
 
 export const TRIP_STATUSES = [

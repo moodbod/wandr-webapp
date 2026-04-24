@@ -15,7 +15,11 @@ export default async function ProtectedLayout({
 
   const viewer = (await fetchAuthQuery(
     api.users.getViewerProfile,
-  )) as ViewerProfile;
+  )) as ViewerProfile | null;
+
+  if (!viewer) {
+    redirect("/auth");
+  }
 
   return <AppShell viewer={viewer}>{children}</AppShell>;
 }

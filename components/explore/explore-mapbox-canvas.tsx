@@ -17,6 +17,7 @@ import mapboxgl, {
 import { useMutation, useQuery } from "convex/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { useExploreMapState } from "@/components/explore/explore-map-state";
 import { useRoutePreview } from "@/components/maps/use-route-preview";
 import { buildAddToTripIntent, buildAuthRedirectPath } from "@/lib/trip-intents";
@@ -61,9 +62,20 @@ type ExplorePlacePreview = {
   estimatedVisitDuration: string;
   highlights: string[];
   featured: boolean;
+  listingType?: "landmark" | "activity" | "stay";
 };
 
 type ExploreMapPoi = ExplorePlacePreview;
+
+type BookableOfferPreview = {
+  _id: Id<"bookableOffers">;
+  title: string;
+  kind: "activity" | "tour" | "stay" | "transport";
+  priceEstimate: number;
+  currency: string;
+  duration: string;
+  listingType?: "activity" | "stay";
+};
 
 type SharedMapState = {
   hostElement: HTMLDivElement | null;
@@ -353,6 +365,7 @@ export function ExploreMapboxCanvas({
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const seedNamibiaPlaces = useMutation(api.places.seedNamibiaPlacesIfNeeded);
   const addStop = useMutation(api.tripStops.addStop);
+  const createBookingRequest = useMutation(api.bookings.createBookingRequest);
   const explorePois = useQuery(api.places.listExploreMapPois, {
     category: activeFilter,
     search: deferredSearchQuery,
@@ -361,6 +374,10 @@ export function ExploreMapboxCanvas({
     api.trips.getTripWorkspace,
     isAuthenticated ? { tripId: null } : "skip",
   );
+  const selectedPlaceOffers = useQuery(
+    api.bookings.listOffersForPlace,
+    selectedPlaceSlug ? { placeSlug: selectedPlaceSlug } : "skip",
+  ) as BookableOfferPreview[] | undefined;
   const intent = searchParams.get("intent");
   const intentPlaceSlug = searchParams.get("place");
   const places = useMemo(() => explorePois ?? [], [explorePois]);
@@ -448,8 +465,20 @@ export function ExploreMapboxCanvas({
 
     try {
       const result = await addStop({ placeSlug });
+      const offer = selectedPlaceOffers?.[0] ?? null;
 
-      if (result.created) {
+      if (offer && (selectedPlace?.listingType === "activity" || selectedPlace?.listingType === "stay")) {
+        await createBookingRequest({
+          tripId: result.tripId,
+          stopId: result.stopId,
+          offerId: offer._id,
+          guestCount: 1,
+          requestedDateTime: null,
+          note: null,
+        });
+      }
+
+      if (result.created || offer) {
         setRecentlyAddedSlug(placeSlug);
       }
     } finally {
@@ -616,11 +645,12 @@ export function ExploreMapboxCanvas({
       return;
     }
 
-    if (tripWorkspace === undefined) {
+    if (tripWorkspace === undefined || selectedPlaceOffers === undefined) {
       return;
     }
 
     const targetSlug = intentPlaceSlug;
+    const offersForIntent = selectedPlaceOffers;
     const intentKey = `${intent}:${targetSlug}`;
     if (processedIntentRef.current === intentKey) {
       return;
@@ -640,8 +670,20 @@ export function ExploreMapboxCanvas({
 
       try {
         const result = await addStop({ placeSlug: targetSlug });
+        const offer = offersForIntent[0] ?? null;
 
-        if (isActive && result.created) {
+        if (offer && (selectedPlace?.listingType === "activity" || selectedPlace?.listingType === "stay")) {
+          await createBookingRequest({
+            tripId: result.tripId,
+            stopId: result.stopId,
+            offerId: offer._id,
+            guestCount: 1,
+            requestedDateTime: null,
+            note: null,
+          });
+        }
+
+        if (isActive && (result.created || offer)) {
           setRecentlyAddedSlug(targetSlug);
         }
       } finally {
@@ -659,12 +701,15 @@ export function ExploreMapboxCanvas({
     };
   }, [
     addStop,
+    createBookingRequest,
     currentTripIsActive,
     intent,
     intentPlaceSlug,
     isAuthenticated,
     pathname,
     router,
+    selectedPlace,
+    selectedPlaceOffers,
     tripWorkspace,
   ]);
 
@@ -1046,13 +1091,21 @@ export function ExploreMapboxCanvas({
       isTripActive: currentTripIsActive,
       wasJustAdded: recentlyAddedSlug === selectedPlace.slug,
     });
+    const primaryOffer = selectedPlaceOffers?.[0] ?? null;
+    const buttonLabel =
+      !buttonState.disabled && primaryOffer && selectedPlace.listingType === "activity"
+        ? "Book activity"
+        : !buttonState.disabled && primaryOffer && selectedPlace.listingType === "stay"
+          ? "Book stay"
+          : buttonState.label;
 
     popupRootRef.current?.render(
       <ExplorePoiPopup
         buttonDisabled={buttonState.disabled}
         buttonHint={buttonState.hint}
-        buttonLabel={buttonState.label}
+        buttonLabel={buttonLabel}
         isAuthenticated={isAuthenticated}
+        offers={selectedPlaceOffers ?? []}
         onAddToTrip={handleAddToTrip}
         onClose={handlePopupClose}
         place={selectedPlace}
@@ -1070,6 +1123,7 @@ export function ExploreMapboxCanvas({
     isMapReady,
     recentlyAddedSlug,
     selectedPlace,
+    selectedPlaceOffers,
     selectedTripStop,
     tripPlaceSlugSet,
   ]);
@@ -1106,6 +1160,7 @@ function ExplorePoiPopup({
   buttonHint,
   buttonLabel,
   isAuthenticated,
+  offers,
   onAddToTrip,
   onClose,
   place,
@@ -1115,6 +1170,7 @@ function ExplorePoiPopup({
   buttonHint: string | null;
   buttonLabel: string;
   isAuthenticated: boolean;
+  offers: BookableOfferPreview[];
   onAddToTrip: (placeSlug: string) => void;
   onClose: () => void;
   place: ExplorePlacePreview;
@@ -1126,7 +1182,7 @@ function ExplorePoiPopup({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#7f866d]">
-              {place.category}
+              {place.listingType ?? place.category}
             </p>
             {tripStopNumber ? (
               <span className="rounded-full bg-[#eef6e7] px-2 py-1 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[#315117]">
@@ -1163,6 +1219,11 @@ function ExplorePoiPopup({
         <span className="rounded-full bg-[#f3f4ef] px-2.5 py-1 text-[0.7rem] font-semibold text-[#4b5345]">
           {place.estimatedVisitDuration}
         </span>
+        {offers[0] ? (
+          <span className="rounded-full bg-[#eef6e7] px-2.5 py-1 text-[0.7rem] font-bold text-[#315117]">
+            From {new Intl.NumberFormat("en-US", { style: "currency", currency: offers[0].currency, maximumFractionDigits: 0 }).format(offers[0].priceEstimate)}
+          </span>
+        ) : null}
       </div>
 
       <div className="mt-4 flex flex-wrap gap-1.5">
@@ -1175,6 +1236,22 @@ function ExplorePoiPopup({
           </span>
         ))}
       </div>
+
+      {offers.length > 0 ? (
+        <div className="mt-4 rounded-2xl border border-[#e5e8dd] bg-[#fbfcf8] p-3">
+          <p className="text-[0.64rem] font-bold uppercase tracking-[0.14em] text-[#7f866d]">
+            Requestable here
+          </p>
+          <div className="mt-2 space-y-2">
+            {offers.slice(0, 2).map((offer) => (
+              <div key={offer._id} className="flex items-center justify-between gap-2 text-xs">
+                <span className="min-w-0 truncate font-bold text-[#30372f]">{offer.title}</span>
+                <span className="shrink-0 font-black text-[#315117]">{offer.duration}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <button
         type="button"

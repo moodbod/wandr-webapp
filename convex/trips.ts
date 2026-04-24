@@ -7,11 +7,15 @@ import {
   getTripByIdForViewer,
   getTripStops,
   getViewerTrips,
+  getOptionalViewerId,
   type PlannerCtx,
   requireViewerId,
   resolveEffectiveTrip,
 } from "./planner";
 import type { Doc, Id } from "./_generated/dataModel";
+import { buildBudgetSummary } from "./budgets";
+import { buildBookingSummary } from "./bookings";
+import { buildLiveSessionState, endLiveSessionForTrip } from "./liveTrips";
 import {
   DEFAULT_TRIP_TITLE,
   LEGACY_DEFAULT_NAMIBIA_TRIP_TITLE,
@@ -57,6 +61,9 @@ type TripWorkspaceState = {
   trip: TripSummary | null;
   routeCoordinates: [number, number][];
   stops: TripWorkspaceStop[];
+  budget: Awaited<ReturnType<typeof buildBudgetSummary>> | null;
+  bookings: Awaited<ReturnType<typeof buildBookingSummary>> | null;
+  live: Awaited<ReturnType<typeof buildLiveSessionState>> | null;
 };
 
 async function buildTripSummaries(ctx: PlannerCtx, trips: Doc<"trips">[]) {
@@ -78,6 +85,9 @@ async function buildTripWorkspace(
       trip: null,
       routeCoordinates: [],
       stops: [],
+      budget: null,
+      bookings: null,
+      live: null,
     };
   }
 
@@ -103,6 +113,12 @@ async function buildTripWorkspace(
     }),
   );
 
+  const [budget, bookings, live] = await Promise.all([
+    buildBudgetSummary(ctx, trip),
+    buildBookingSummary(ctx, trip),
+    buildLiveSessionState(ctx, trip),
+  ]);
+
   return {
     activeTripId: trip._id,
     trip: summarizeTrip(trip, stops.length, getTripDayCount(stops)),
@@ -111,6 +127,9 @@ async function buildTripWorkspace(
       stop.place.coordinates[1] ?? 0,
     ]) as [number, number][],
     stops: stopsWithPlaces,
+    budget,
+    bookings,
+    live,
   };
 }
 
@@ -218,6 +237,7 @@ export const endTrip = mutation({
       status: "completed",
       updatedAt: now,
     });
+    await endLiveSessionForTrip(ctx, trip._id, userId);
 
     const preferences = await ensureViewerPreferences(ctx, userId);
     if (preferences.activeTripId === trip._id) {
@@ -236,7 +256,11 @@ export const getTripWorkspace = query({
     tripId: v.optional(v.union(v.id("trips"), v.null())),
   },
   handler: async (ctx, args) => {
-    const userId = await requireViewerId(ctx);
+    const userId = await getOptionalViewerId(ctx);
+    if (!userId) {
+      return await buildTripWorkspace(ctx, null);
+    }
+
     const trip = await resolveEffectiveTrip(ctx, userId, args.tripId ?? null);
     return await buildTripWorkspace(ctx, trip);
   },

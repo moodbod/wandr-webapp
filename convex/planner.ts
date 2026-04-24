@@ -3,11 +3,136 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { DEFAULT_TRIP_TITLE, namibiaPlaceSeed } from "../lib/namibia-data";
 
+
+type OfferTemplate = {
+  slug: string;
+  offers: Array<{
+    kind: "activity" | "stay";
+    title: string;
+    providerName: string;
+    description: string;
+    priceEstimate: number;
+    duration: string;
+  }>;
+};
+
+const bookableOfferSeed: OfferTemplate[] = [
+  {
+    slug: "sossusvlei-deadvlei",
+    offers: [
+      {
+        kind: "activity",
+        title: "Sunrise dunes guide",
+        providerName: "Sesriem Desert Guides",
+        description: "Early pickup, Deadvlei shuttle timing, and a guided dune walk.",
+        priceEstimate: 1250,
+        duration: "5 hours",
+      },
+      {
+        kind: "stay",
+        title: "Sesriem base camp room",
+        providerName: "Wandr Stay Desk",
+        description: "Request a nearby stay before an early Sossusvlei entry.",
+        priceEstimate: 2400,
+        duration: "1 night",
+      },
+    ],
+  },
+  {
+    slug: "etosha-national-park",
+    offers: [
+      {
+        kind: "activity",
+        title: "Waterhole safari drive",
+        providerName: "Etosha Field Guides",
+        description: "A guided half-day drive focused on active waterholes.",
+        priceEstimate: 1600,
+        duration: "4 hours",
+      },
+      {
+        kind: "stay",
+        title: "Park rest camp request",
+        providerName: "Wandr Stay Desk",
+        description: "Request a camp stay near the next day of your route.",
+        priceEstimate: 2950,
+        duration: "1 night",
+      },
+    ],
+  },
+  {
+    slug: "swakopmund",
+    offers: [
+      {
+        kind: "activity",
+        title: "Dune skydiving request",
+        providerName: "Coast Adventure Desk",
+        description: "Request a tandem skydiving slot over the desert coast.",
+        priceEstimate: 4200,
+        duration: "3 hours",
+      },
+      {
+        kind: "activity",
+        title: "Airport and coast transfer",
+        providerName: "Wandr Transfers",
+        description: "Request a transfer between Walvis Bay, Swakopmund, and your stay.",
+        priceEstimate: 850,
+        duration: "1 hour",
+      },
+    ],
+  },
+  {
+    slug: "sandwich-harbour",
+    offers: [
+      {
+        kind: "activity",
+        title: "Tide-timed 4x4 dunes tour",
+        providerName: "Harbour Dune Guides",
+        description: "A guided 4x4 route planned around tides and sand conditions.",
+        priceEstimate: 2350,
+        duration: "5 hours",
+      },
+    ],
+  },
+  {
+    slug: "spitzkoppe",
+    offers: [
+      {
+        kind: "stay",
+        title: "Stargazing campsite request",
+        providerName: "Wandr Stay Desk",
+        description: "Request a simple overnight base close to the granite arches.",
+        priceEstimate: 900,
+        duration: "1 night",
+      },
+    ],
+  },
+  {
+    slug: "fish-river-canyon",
+    offers: [
+      {
+        kind: "activity",
+        title: "Canyon lookout drive",
+        providerName: "South Route Guides",
+        description: "A flexible guide request for the canyon viewpoints and timing.",
+        priceEstimate: 1350,
+        duration: "3 hours",
+      },
+    ],
+  },
+];
 type PlannerCtx = QueryCtx | MutationCtx;
 export type { PlannerCtx };
 
+async function safeGetAuthUserId(ctx: PlannerCtx) {
+  try {
+    return await getAuthUserId(ctx);
+  } catch {
+    return null;
+  }
+}
+
 export async function requireViewerId(ctx: PlannerCtx) {
-  const userId = await getAuthUserId(ctx);
+  const userId = await safeGetAuthUserId(ctx);
   if (!userId) {
     throw new Error("Not authenticated.");
   }
@@ -18,6 +143,27 @@ export async function requireViewerId(ctx: PlannerCtx) {
   }
 
   return user._id;
+}
+
+export async function getOptionalViewerId(ctx: PlannerCtx) {
+  const userId = await safeGetAuthUserId(ctx);
+  if (!userId) {
+    return null;
+  }
+
+  const user = await ctx.db.get(userId);
+  return user?._id ?? null;
+}
+
+export async function requireAdminUser(ctx: PlannerCtx) {
+  const userId = await requireViewerId(ctx);
+  const user = await ctx.db.get(userId);
+
+  if (!user || user.role !== "admin") {
+    throw new Error("Admin access required.");
+  }
+
+  return user;
 }
 
 export async function getViewerPreferences(ctx: PlannerCtx, userId: Id<"users">) {
@@ -57,22 +203,70 @@ export async function ensureViewerPreferences(
 
 export async function ensureNamibiaPlaces(ctx: MutationCtx) {
   const existing = await ctx.db.query("places").take(1);
-  if (existing.length > 0) {
-    return { seeded: false, count: existing.length };
-  }
-
   const timestamp = Date.now();
+  let seededPlaces = false;
 
-  for (const place of namibiaPlaceSeed) {
-    await ctx.db.insert("places", {
-      ...place,
-      coordinates: [...place.coordinates],
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    });
+  if (existing.length === 0) {
+    for (const place of namibiaPlaceSeed) {
+      await ctx.db.insert("places", {
+        ...place,
+        coordinates: [...place.coordinates],
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      });
+    }
+
+    seededPlaces = true;
   }
 
-  return { seeded: true, count: namibiaPlaceSeed.length };
+  const seededOffers = await ensureBookableOffers(ctx);
+  const placeCount = seededPlaces ? namibiaPlaceSeed.length : existing.length;
+
+  return {
+    seeded: seededPlaces,
+    count: placeCount,
+    seededOffers: seededOffers.seeded,
+    offerCount: seededOffers.count,
+  };
+}
+
+export async function ensureBookableOffers(ctx: MutationCtx) {
+  const existingOffers = await ctx.db.query("bookableOffers").take(1);
+  if (existingOffers.length > 0) {
+    return { seeded: false, count: existingOffers.length };
+  }
+
+  const places = await ctx.db.query("places").collect();
+  const placesBySlug = new Map(places.map((place) => [place.slug, place]));
+  const now = Date.now();
+  let offerCount = 0;
+
+  for (const placeSeed of bookableOfferSeed) {
+    const place = placesBySlug.get(placeSeed.slug);
+    if (!place) {
+      continue;
+    }
+
+    for (const offer of placeSeed.offers) {
+      await ctx.db.insert("bookableOffers", {
+        placeId: place._id,
+        kind: offer.kind,
+        title: offer.title,
+        providerName: offer.providerName,
+        description: offer.description,
+        priceEstimate: offer.priceEstimate,
+        currency: "NAD",
+        duration: offer.duration,
+        bookingMode: "request",
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+      offerCount += 1;
+    }
+  }
+
+  return { seeded: offerCount > 0, count: offerCount };
 }
 
 export async function getTripByIdForViewer(

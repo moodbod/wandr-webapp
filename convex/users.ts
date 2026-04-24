@@ -1,18 +1,28 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+
+type AuthCtx = MutationCtx | QueryCtx;
+
+async function safeGetAuthUserId(ctx: AuthCtx) {
+  try {
+    return await getAuthUserId(ctx);
+  } catch {
+    return null;
+  }
+}
 
 export const getViewerProfile = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await safeGetAuthUserId(ctx);
     if (!userId) {
-      throw new Error("Not authenticated.");
+      return null;
     }
 
     const user = await ctx.db.get(userId);
     if (!user) {
-      throw new Error("Authenticated user profile is missing.");
+      return null;
     }
 
     const preferences = await ctx.db
@@ -30,6 +40,7 @@ export const getViewerProfile = query({
       homeCountry: preferences?.homeCountry ?? user.homeCountry ?? null,
       travelStyle: preferences?.travelStyle ?? user.travelStyle ?? null,
       preferredActivities: preferences?.preferredActivities ?? [],
+      role: user.role ?? "traveler",
     };
   },
 });
@@ -41,14 +52,14 @@ export const updateViewerPreferences = mutation({
     preferredActivities: v.array(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await safeGetAuthUserId(ctx);
     if (!userId) {
-      throw new Error("Not authenticated.");
+      return null;
     }
 
     const user = await ctx.db.get(userId);
     if (!user) {
-      throw new Error("Authenticated user profile is missing.");
+      return null;
     }
 
     await ctx.db.patch(user._id, {
