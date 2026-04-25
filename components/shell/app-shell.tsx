@@ -86,7 +86,7 @@ export function AppShell({
   const isAuthenticated = Boolean(viewer);
   const isExploreRoute = isActivePath(pathname, "/explore");
   const isTripsRoute = isActivePath(pathname, "/trips");
-  const isFullScreenRoute = isExploreRoute || isTripsRoute;
+  const isFullScreenRoute = isExploreRoute;
   const shouldMountExploreMap = isExploreRoute || hasExploreMapSession();
   const plannerHref = isAuthenticated ? "/trips" : "/auth";
   const displayName = viewer?.name ?? "Traveler";
@@ -112,6 +112,8 @@ export function AppShell({
       setIsSigningOut(false);
     }
   }
+
+
 
   return (
     <ExploreMapStateProvider>

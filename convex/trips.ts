@@ -195,8 +195,8 @@ export const startTrip = mutation({
     const userId = await requireViewerId(ctx);
     const trip = await getTripByIdForViewer(ctx, args.tripId, userId);
 
-    if (trip.status !== "draft") {
-      throw new Error("Only draft trips can be started.");
+    if (trip.status !== "draft" && trip.status !== "planned") {
+      throw new Error("Only draft or planned trips can be started.");
     }
 
     const stops = await getTripStops(ctx, trip._id);
